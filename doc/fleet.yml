@@ -1,0 +1,11 @@
+codec:
+  use: org.spootnik.fleet.codec/json-codec
+transport:
+  use: org.spootnik.fleet.transport.redis/redis-transport
+scenarios:
+  use: org.spootnik.fleet.api/standard-scenario-store
+  path: "/tmp/scenarios"
+http:
+  port: 8080
+
+  
