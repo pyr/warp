@@ -30,24 +30,24 @@
    (DELETE "/scenarios/:script_name" [script_name]
            (response (generate-string (api/delete! scenarios script_name))))
 
-   (POST "/scenarios/:script_name/executions" request
-         (let [script_name (-> request :params :script_name)
-               scenario (api/get! scenarios script_name)
-               ch       (async/chan 10)]
-           (http/with-channel request hchan
-             (future
-               (doseq [msg (repeatedly #(async/<!! ch))
-                       :while msg
-                       :when msg]
-                 (http/send! hchan
-                             {:status 200
-                              :headers {"Content-Type" "text/event-stream"
-                                        "Cache-Control" "no-cache"}
-                              :body (format "DATA: %s\n\n"
-                                            (generate-string msg))}
-                             false))
-               (http/close hchan))
-             (engine/request engine scenario ch))))
+   (GET "/scenarios/:script_name/executions" request
+        (let [script_name (-> request :params :script_name)
+              scenario (api/get! scenarios script_name)
+              ch       (async/chan 10)]
+          (http/with-channel request hchan
+            (future
+              (doseq [msg (repeatedly #(async/<!! ch))
+                      :while msg
+                      :when msg]
+                (http/send! hchan
+                            {:status 200
+                             :headers {"Content-Type" "text/event-stream"
+                                       "Cache-Control" "no-cache"}
+                             :body (format "data: %s\n\n"
+                                           (generate-string msg))}
+                            false))
+              (http/close hchan))
+            (engine/request engine scenario ch))))
 
    ;; defaults
    (GET "/" []      (redirect "/index.html"))

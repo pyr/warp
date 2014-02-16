@@ -1,0 +1,71 @@
+<div class="panel panel-default">
+  
+  <div class="panel-heading">
+    <div class="row">
+      <div class="col-sm-2">
+        <h4>Scenarios</h4>
+      </div>
+    </div>
+  </div>
+  
+  <div class="panel-body">
+    <table class="table table-striped">
+      <thead>
+        <th>Script name</th>
+        <th>Timeout</th>
+        <th>Match</th>
+        <th colspan="2">Commands</th>
+      </thead>
+      <tbody>
+        <tr ng-repeat="scenario in scenario_list()">
+          <td>{{scenario.script_name}}</td>
+          <td>{{scenario.timeout}}</td>
+          <td>{{scenario.match}}</td>
+          <td>{{scenario.script}}</td>
+          <td>
+            <button type="button"
+                    class="btn btn-xs btn-primary"
+                    ng-click="execute_scenario(scenario.script_name)">
+              execute
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+</div>
+
+
+<div ng-show="execution" class="panel panel-default">
+  <div class="panel-heading">
+    <div class="row">
+      <div class="col-sm-2">
+        <h4>Last execution: {{execution.total_done}} out of {{execution.starting_hosts}} done</h4>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="panel-body">
+    <table class="table table-striped">
+      <thead>
+        <th>host</th>
+        <th ng-repeat="command in execution_scheduled.script">{{command}}</th>
+      </thead>
+
+      <tbody>
+        <tr ng-repeat="(host,output) in execution.hosts">
+          <td>{{host}}</td>
+          <td ng-repeat="command in output">
+            <span ng-show="command.status == 'success'" class="label label-success">success</span>
+            <span ng-hide="command.status == 'success'" class="label label-danger">{{command.status}}</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+              
+  
+</div>
+                                

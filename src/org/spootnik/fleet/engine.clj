@@ -20,15 +20,17 @@
            (#{"finished" "failure"} (-> resp :output :status))))
 
 (defn siphon!
-  ([input output type timeout]
+  ([input output type timeout pred]
      (go
-       (loop []
+       (loop [got 0]
          (let [[payload src] (alts! [input timeout])]
            (if-not (= timeout src)
              (do
                (>! output {:type type :msg (:msg payload)})
-               (recur))
-             (a/close! output)))))))
+               (recur (if (pred payload) (inc got) got)))
+             (do (a/close! output) got))))))
+  ([input output type timeout]
+     (siphon! input output type timeout identity)))
 
 (defn chan-names
   [id]
@@ -48,28 +50,17 @@
               [ack-ch resp-ch]  (transport/subscribe @transport chans)]
           (transport/publish @transport pubchan payload)
           (go
-            (let [acks   (chan 10)
-                  resps  (chan 10)
-                  need   (atom 0)]
-              (siphon! ack-ch acks :ack (a/timeout ack-timeout))
-              (siphon! resp-ch resps :resp (a/timeout (:timeout payload)))
-              (go
-                (loop [chans         [acks resps]]
-                  (let [[payload src] (alts! chans)]
-                    (if (= src acks)
-                      (if payload
-                        (do
-                          (>! sink payload)
-                          (println "got ack payload: " payload)
-                          (when (valid? payload) (swap! need inc))
-                          (recur [acks resps]))
-                        (recur [resps]))
-                      (if payload
-                        (do
-                          (println "got resp payload: " payload)
-                          (>! sink payload)
-                          (if-not (and (finished? payload)
-                                       (not (pos? (swap! need dec))))
-                            (recur chans)
-                            (a/close! sink)))
-                        (a/close! sink)))))))))))))
+             (let [resps   (chan 10)
+                   acks    (chan 10)
+                   timeout (a/timeout ack-timeout)
+                   need    (siphon! ack-ch acks :ack timeout valid?)]
+               (a/pipe acks sink false)
+               (siphon! resp-ch resps :resp (a/timeout (:timeout payload)))
+               (go
+                 (loop [payload (<! resps)
+                        need    (<! need)]
+                   (when (and (pos? need) payload)
+                     (>! sink payload)
+                     (recur (<! resps)
+                            (if (finished? payload) (dec need) need))))
+                 (a/close! sink)))))))))
