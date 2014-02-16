@@ -1,6 +1,5 @@
 (ns org.spootnik.fleet.engine
-  (:require [clojure.core.async :refer [chan pub sub >!! <!!
-                                        alts!! timeout close!]]
+  (:require [clojure.core.async           :refer [chan >! <! alts! go] :as a]
             [org.spootnik.fleet.transport :as transport]))
 
 (def ack-timeout 2000)
@@ -9,29 +8,27 @@
   (set-transport! [this transport])
   (request [this payload out]))
 
-(defn valid?
-  [{:keys [status] :as ack}]
-  (= status "starting"))
+(def valid?
+  (comp (partial = "starting") :status :msg))
 
-(defn get-acks
-  [input output]
-  (loop [acks nil]
-    (let [timeout       (timeout ack-timeout)
-          [payload src] (alts!! [input timeout])]
-      (if (= timeout src)
-        (do (>!! output {:type :acks :acks acks})
-            (filter valid? acks))
-        (recur (conj acks (:msg payload)))))))
+(def finished?
+  (comp #{"finished" "failure" "timeout"} :status :output :msg))
 
-(defn get-resps
-  [input output timeout max]
-  (loop [got 0]
-    (let [[payload src] (alts!! [input timeout])
-          got           (inc got)]
-      (>!! output (if (= timeout src) {:type :timeout} (:msg payload)))
-      (if (and (not= timeout src) (< got max))
-        (recur got)
-        (do (close! output))))))
+(comment (defn finished?
+           [resp]
+           (println "looking at: " resp)
+           (#{"finished" "failure"} (-> resp :output :status))))
+
+(defn siphon!
+  ([input output type timeout]
+     (go
+       (loop []
+         (let [[payload src] (alts! [input timeout])]
+           (if-not (= timeout src)
+             (do
+               (>! output {:type type :msg (:msg payload)})
+               (recur))
+             (a/close! output)))))))
 
 (defn chan-names
   [id]
@@ -44,12 +41,35 @@
       Engine
       (set-transport! [this new-transport]
         (reset! transport new-transport))
-      (request [this payload out]
+      (request [this payload sink]
         (let [id                (str (java.util.UUID/randomUUID))
               payload           (assoc payload :id id)
               [pubchan & chans] (chan-names id)
               [ack-ch resp-ch]  (transport/subscribe @transport chans)]
           (transport/publish @transport pubchan payload)
-          (let [acks (get-acks ack-ch out)]
-            (get-resps resp-ch out (timeout (:timeout payload)) (count acks))
-            (transport/unsubscribe @transport chans)))))))
+          (go
+            (let [acks   (chan 10)
+                  resps  (chan 10)
+                  need   (atom 0)]
+              (siphon! ack-ch acks :ack (a/timeout ack-timeout))
+              (siphon! resp-ch resps :resp (a/timeout (:timeout payload)))
+              (go
+                (loop [chans         [acks resps]]
+                  (let [[payload src] (alts! chans)]
+                    (if (= src acks)
+                      (if payload
+                        (do
+                          (>! sink payload)
+                          (println "got ack payload: " payload)
+                          (when (valid? payload) (swap! need inc))
+                          (recur [acks resps]))
+                        (recur [resps]))
+                      (if payload
+                        (do
+                          (println "got resp payload: " payload)
+                          (>! sink payload)
+                          (if-not (and (finished? payload)
+                                       (not (pos? (swap! need dec))))
+                            (recur chans)
+                            (a/close! sink)))
+                        (a/close! sink)))))))))))))
