@@ -86,8 +86,8 @@
     </div>
   
     <div class="panel-body">
-      <pre ng-hide="empty_body(script[1].stdout)" ng-bind-html="script[1].stdout | ansi"></pre>
-      <pre ng-hide="empty_body(script[1].stderr)" ng-bind-html="script[1].stderr | ansi"></pre>
+      <pre class="console" ng-hide="empty_body(script[1].stdout)" ng-bind-html="script[1].stdout | ansi"></pre>
+      <pre class="console" ng-hide="empty_body(script[1].stderr)" ng-bind-html="script[1].stderr | ansi"></pre>
       <span ng-show="empty_body(script[1].stdout) && empty_body(script[1].stderr)">no output</span>
     </div>
   </div>
