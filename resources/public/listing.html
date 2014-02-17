@@ -19,7 +19,7 @@
         <tr ng-repeat="scenario in scenario_list()">
           <td>{{scenario.script_name}}</td>
           <td>{{scenario.timeout / 1000 | number:1}}</td>
-          <td>{{scenario.match | matcher}}</td>
+          <td><code>{{scenario.match | matcher}}</code></td>
           <td>
             <button type="button"
                     class="btn btn-xs btn-primary"
@@ -98,5 +98,4 @@
       <span ng-show="empty_body(script[1].stdout) && empty_body(script[1].stderr)">no output</span>
     </div>
   </div>
-  
 </div>
