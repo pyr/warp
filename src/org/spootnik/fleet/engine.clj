@@ -14,11 +14,6 @@
 (def finished?
   (comp #{"finished" "failure" "timeout"} :status :output :msg))
 
-(comment (defn finished?
-           [resp]
-           (println "looking at: " resp)
-           (#{"finished" "failure"} (-> resp :output :status))))
-
 (defn siphon!
   ([input output type timeout pred]
      (go

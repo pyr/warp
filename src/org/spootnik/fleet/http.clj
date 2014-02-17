@@ -7,28 +7,39 @@
             [ring.middleware.json      :as json]
             [compojure.route           :as route]
             [clojure.core.async        :as async]
+            [clojure.stacktrace]
             [org.spootnik.fleet.api    :as api]
             [org.spootnik.fleet.engine :as engine]
+            [org.spootnik.fleet.history :as history]
             [org.httpkit.server        :as http]))
+
+(defn json-response
+  [body]
+  {:status 200
+   :headers {"Content-Type" "application/json"}
+   :body (generate-string body)})
 
 (defn api-routes
   [scenarios engine]
 
   (routes
    (GET "/scenarios" []
-        (response (generate-string (api/all! scenarios))))
+        (json-response (api/all! scenarios)))
 
    (POST "/scenarios" {scenario :body}
-         (response (generate-string (api/upsert! scenarios scenario))))
+         (json-response (api/upsert! scenarios scenario)))
 
    (PUT "/scenarios" []
-        (response (generate-string (api/save! scenarios))))
+        (json-response (api/save! scenarios)))
 
    (GET "/scenarios/:script_name" [script_name]
-        (response (generate-string  (api/get! scenarios script_name))))
+        (json-response (api/get! scenarios script_name)))
 
    (DELETE "/scenarios/:script_name" [script_name]
-           (response (generate-string (api/delete! scenarios script_name))))
+           (json-response (api/delete! scenarios script_name)))
+
+   (GET "/scenarios/:script_name/history" [script_name]
+        (json-response (history/fetch scenarios script_name)))
 
    (GET "/scenarios/:script_name/executions" request
         (let [script_name (-> request :params :script_name)
@@ -36,17 +47,21 @@
               ch       (async/chan 10)]
           (http/with-channel request hchan
             (future
-              (doseq [msg (repeatedly #(async/<!! ch))
-                      :while msg
-                      :when msg]
-                (http/send! hchan
-                            {:status 200
-                             :headers {"Content-Type" "text/event-stream"
-                                       "Cache-Control" "no-cache"}
-                             :body (format "data: %s\n\n"
-                                           (generate-string msg))}
-                            false))
-              (http/close hchan))
+              (try
+                (doseq [msg (repeatedly #(async/<!! ch))
+                        :while msg
+                        :when msg]
+                  (history/update script_name msg)
+                  (http/send! hchan
+                              {:status 200
+                               :headers {"Content-Type" "text/event-stream"
+                                         "Cache-Control" "no-cache"}
+                               :body (format "data: %s\n\n"
+                                             (generate-string msg))}
+                              false))
+                (http/close hchan)
+                (catch Exception e
+                  (error e "cannot handle incoming message"))))
             (engine/request engine scenario ch))))
 
    ;; defaults

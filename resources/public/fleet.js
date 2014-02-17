@@ -21,6 +21,9 @@ app.factory('$scenario', function ($http, $timeout) {
        delete: function(script_name) {
            return $http.delete('/scenarios/' + script_name);
        },
+       history: function(script_name) {
+           return $http.get('/scenarios/' + script_name + '/history');
+       },
        execute: function (scope, script, script_name) {
            var url = '/scenarios/' + script_name + '/executions';
            var es = new EventSource(url);
@@ -29,11 +32,9 @@ app.factory('$scenario', function ($http, $timeout) {
                           script: script,
                           hosts: {},
                           host_commands: {},
-                          statuses: {},
                           total_acks: 0,
                           starting_hosts: 0,
-                          total_done: 0,
-                          acks: []};
+                          total_done: 0};
 
            es.onconnect = function () {
                return;
@@ -55,7 +56,6 @@ app.factory('$scenario', function ($http, $timeout) {
                            results.starting_hosts += 1;
                        }
                        results.total_acks += 1;
-                       results.acks.push(msg.msg);
                    } else if (msg.type == 'resp') {
                        var host = msg.msg.host;
                        var finished = ((msg.msg.output.status == 'failure') ||
@@ -80,6 +80,37 @@ app.factory('$scenario', function ($http, $timeout) {
            return results;
        }
    };
+});
+
+app.controller('FleetHistory', function($scope, $routeParams, $scenario, $timeout) {
+    $scope.get_color = function(c) {
+        if (c == 'finished') {
+            return 'label-primary';
+        } else if (c == 'failure') {
+            return 'label-danger';
+        } else if (c == 'success') {
+            return 'label-success';
+        } else {
+            return 'label-warning';
+        }
+    };
+    $scope.set_host = function(host) {
+        $scope.host = host;
+    }
+
+    $scope.nolist = true;
+    $scope.host = undefined;
+    $scope.empty_body = _.isEmpty;
+
+    $timeout(function () {
+        $scenario.history($routeParams.script_name).success(function (data) {
+            data.host_commands = {};
+            _.each(data.hosts, function(v,k) {
+                data.host_commands[k] = _.zip(data.script, data.hosts[k]);
+            });
+            $scope.execution = data;
+        });
+    });
 });
 
 app.controller('Fleet', function($scope, $routeParams, $location, $scenario) {
@@ -150,5 +181,6 @@ app.config(function($routeProvider) {
         .when('/details/:script_name', {templateUrl: 'details.html', controller: 'Fleet'})
         .when('/host/:host', {templateUrl: 'host.html', controller: 'Fleet'})
         .when('/post', {templateUrl: 'post.html', controller: 'Fleet'})
+        .when('/history/:script_name', {templateUrl: 'listing.html', controller: 'FleetHistory'})
         .otherwise({redirectTo: '/list'});
 });
