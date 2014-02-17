@@ -2,8 +2,11 @@ var app = angular.module('fleet', ['ngRoute', 'ngSanitize']);
 
 app.filter('ansi', function($sce) {
     return function (input) {
-        return $sce.trustAsHtml(window.ansi_up.ansi_to_html(
-            window.ansi_up.escape_for_html(input)));
+        if (input)
+            return $sce.trustAsHtml(window.ansi_up.ansi_to_html(
+                window.ansi_up.escape_for_html(input)));
+        else
+            return "";
     };
 });
 
