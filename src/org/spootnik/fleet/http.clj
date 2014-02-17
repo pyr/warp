@@ -1,17 +1,18 @@
 (ns org.spootnik.fleet.http
-  (:require [compojure.core            :refer [routes GET POST PUT DELETE]]
-            [clojure.tools.logging     :refer [error]]
-            [clojure.pprint            :refer [pprint]]
-            [ring.util.response        :refer [response redirect]]
-            [cheshire.core             :refer [generate-string]]
-            [ring.middleware.json      :as json]
-            [compojure.route           :as route]
-            [clojure.core.async        :as async]
-            [clojure.stacktrace]
-            [org.spootnik.fleet.api    :as api]
-            [org.spootnik.fleet.engine :as engine]
-            [org.spootnik.fleet.history :as history]
-            [org.httpkit.server        :as http]))
+  (:require [compojure.core                 :refer [routes GET POST PUT DELETE]]
+            [clojure.tools.logging          :refer [error]]
+            [clojure.pprint                 :refer [pprint]]
+            [ring.util.response             :refer [response redirect]]
+            [cheshire.core                  :refer [generate-string]]
+            [ring.middleware.keyword-params :refer [wrap-keyword-params]]
+            [ring.middleware.params         :refer [wrap-params]]
+            [ring.middleware.json           :as json]
+            [compojure.route                :as route]
+            [clojure.core.async             :as async]
+            [org.spootnik.fleet.api         :as api]
+            [org.spootnik.fleet.engine      :as engine]
+            [org.spootnik.fleet.history     :as history]
+            [org.httpkit.server             :as http]))
 
 (defn json-response
   [body]
@@ -43,8 +44,12 @@
 
    (GET "/scenarios/:script_name/executions" request
         (let [script_name (-> request :params :script_name)
-              scenario (api/get! scenarios script_name)
-              ch       (async/chan 10)]
+              args        (if-let [args (-> request :params :args)]
+                            (if (sequential? args) args [args])
+                            [])
+              scenario    (api/get! scenarios script_name)
+              profile     (-> request :params :profile keyword)
+              ch          (async/chan 10)]
           (http/with-channel request hchan
             (future
               (try
@@ -62,7 +67,9 @@
                 (http/close hchan)
                 (catch Exception e
                   (error e "cannot handle incoming message"))))
-            (engine/request engine scenario ch))))
+            (engine/request engine
+                            (api/prepare scenario profile args)
+                            ch))))
 
    ;; defaults
    (GET "/" []      (redirect "/index.html"))
@@ -85,5 +92,7 @@
   (api/load! scenarios)
   (http/run-server (-> (api-routes scenarios engine)
                        (wrap-error)
+                       (wrap-keyword-params)
+                       (wrap-params)
                        (json/wrap-json-body {:keywords? true}))
                    opts))
