@@ -10,6 +10,32 @@ app.filter('ansi', function($sce) {
     };
 });
 
+app.filter('matcher', function () {
+
+    return function recur (input)  {
+       if (! input)
+           return "";
+
+       if (input == "all")
+           return "all";
+
+       if (input.host)
+           return "host = " + input.host;
+
+       if (input.fact)
+           return "facts[" + input.fact + "] = " + input.value;
+
+       if (input.not)
+           return "!(" + recur(input.not) + ')';
+
+       if (input.and)
+           return '(' + _.map(input.and, recur).join(" && ") + ')';
+
+       if (input.or)
+           return '(' + _.map(input.and, recur).join(" || ") + ')';
+   }
+});
+
 app.factory('$scenario', function ($http, $timeout) {
    return {
        create: function (scenario) {

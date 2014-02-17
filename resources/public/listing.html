@@ -18,8 +18,8 @@
       <tbody>
         <tr ng-repeat="scenario in scenario_list()">
           <td>{{scenario.script_name}}</td>
-          <td>{{scenario.timeout}}</td>
-          <td>{{scenario.match}}</td>
+          <td>{{scenario.timeout / 1000 | number:1}}</td>
+          <td>{{scenario.match | matcher}}</td>
           <td>
             <button type="button"
                     class="btn btn-xs btn-primary"
@@ -50,11 +50,13 @@
       <table class="table table-striped">
         <thead>
           <th>host</th>
-          <th ng-repeat="command in execution_scheduled.script">
-            <ng-switch>
-              {{command}}
+          <th ng-repeat="command in execution.script">
+            <span ng-show="command.shell"><span class="label label-primary">shell</span><small> <code ng-bind="command.shell"></code></small></span>
+            <span ng-show="command.service"><span class="label label-primary">service {{command.action}}</span> {{command.service}}</span>
+            <span ng-show="command.sleep"><span class="label label-primary">sleep</span> {{command.sleep}}</span>
+            <span ng-show="command == 'ping'"><span class="label label-primary">ping</span></span>
           </th>
-          <th>complete</th>
+          <th><span class="label label-primary">complete</span></th>
         </thead>
         
         <tbody>
@@ -82,7 +84,12 @@
   <div ng-repeat="script in execution.host_commands[host]" class="panel panel-default">
   
     <div class="panel-heading">
-      command: {{script[0]}}, status: <span class="label" ng-class="get_color(script[1].status)">{{script[1].status}}</span>
+      command: 
+      <span ng-show="script[0].shell"><span class="label label-primary">shell</span><small> <code ng-bind="script[0].shell"></code></small></span>
+      <span ng-show="script[0].service"><span class="label label-primary">service {{script[0].action}}</span> {{script[0].service}}</span>
+      <span ng-show="script[0].sleep"><span class="label label-primary">sleep</span> {{script[0].sleep}}</span>
+      <span ng-show="script[0] == 'ping'"><span class="label label-primary">ping</span></span>,
+      status: <span class="label" ng-class="get_color(script[1].status)">{{script[1].status}}</span>
     </div>
   
     <div class="panel-body">
