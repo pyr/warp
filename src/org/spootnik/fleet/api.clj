@@ -1,7 +1,29 @@
 (ns org.spootnik.fleet.api
   "Minimal file base keyvalue database for scenarios"
   (:require [clojure.java.io :as io]
+            [clojure.string  :as str]
             [clj-yaml.core   :as yaml]))
+
+
+(defn interpol
+    [input args]
+    (let [clean   #(str/replace % #"(\{\{|\}\})" "")
+          args    (assoc (into {} (map-indexed #(vector (str %1) %2) args))
+                    "*" (str/join " " args))
+          extract (fn [k] (get args (clean k) ""))]
+      (str/replace input #"\{\{[0-9*]+\}\}" extract)))
+
+(defn prepare-command
+  [args {:keys [shell literal] :as command}]
+  (if (and shell (not literal))
+    (assoc command :shell (interpol shell args))
+    command))
+
+(defn prepare
+  [scenario profile args]
+  (let [{:keys [script] :as scenario}
+        (merge scenario (get-in scenario [:profiles profile]))]
+    (assoc scenario :script (map (partial prepare-command args) script))))
 
 (defprotocol ScenarioStore
   (upsert! [this scenario])
