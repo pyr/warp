@@ -13,15 +13,13 @@
       <thead>
         <th>Script name</th>
         <th>Timeout</th>
-        <th>Match</th>
-        <th colspan="2">Commands</th>
+        <th colspan="2">Match</th>
       </thead>
       <tbody>
         <tr ng-repeat="scenario in scenario_list()">
           <td>{{scenario.script_name}}</td>
           <td>{{scenario.timeout}}</td>
           <td>{{scenario.match}}</td>
-          <td>{{scenario.script}}</td>
           <td>
             <button type="button"
                     class="btn btn-xs btn-primary"
@@ -37,35 +35,61 @@
 </div>
 
 
-<div ng-show="execution" class="panel panel-default">
-  <div class="panel-heading">
-    <div class="row">
-      <div class="col-sm-2">
-        <h4>Last execution: {{execution.total_done}} out of {{execution.starting_hosts}} done</h4>
+<div ng-hide="host">
+  <div ng-show="execution" class="panel panel-default">
+    <div class="panel-heading">
+      <div class="row">
+        <div class="col-sm-2">
+          <h4>{{execution.script_name}}: {{execution.total_done}} out of {{execution.starting_hosts}} done</h4>
+        </div>
       </div>
     </div>
-  </div>
 
 
-  <div class="panel-body">
-    <table class="table table-striped">
-      <thead>
-        <th>host</th>
-        <th ng-repeat="command in execution_scheduled.script">{{command}}</th>
-      </thead>
-
-      <tbody>
-        <tr ng-repeat="(host,output) in execution.hosts">
-          <td>{{host}}</td>
-          <td ng-repeat="command in output">
-            <span ng-show="command.status == 'success'" class="label label-success">success</span>
-            <span ng-hide="command.status == 'success'" class="label label-danger">{{command.status}}</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <div class="panel-body">
+      <table class="table table-striped">
+        <thead>
+          <th>host</th>
+          <th ng-repeat="command in execution_scheduled.script">
+            <ng-switch>
+              {{command}}
+          </th>
+          <th>complete</th>
+        </thead>
+        
+        <tbody>
+          <tr ng-repeat="(host,output) in execution.hosts">
+            <td><a ng-click="set_host(host)">{{host}}</a></td>
+            <td ng-repeat="command in output">
+              <span class="label" ng-class="get_color(command.status)">{{command.status}}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
               
   
+  </div>
 </div>
                                 
+
+
+
+<div ng-show="host">
+
+  <h2>Execution of {{execution.script_name}} for {{host}} <button class="btn btn-xs btn-primary" ng-click="set_host()">back</button></h2>
+
+  <div ng-repeat="script in execution.host_commands[host]" class="panel panel-default">
+  
+    <div class="panel-heading">
+      command: {{script[0]}}, status: <span class="label" ng-class="get_color(script[1].status)">{{script[1].status}}</span>
+    </div>
+  
+    <div class="panel-body">
+      <pre ng-hide="empty_body(script[1].stdout)" ng-bind-html="script[1].stdout | ansi"></pre>
+      <pre ng-hide="empty_body(script[1].stderr)" ng-bind-html="script[1].stderr | ansi"></pre>
+      <span ng-show="empty_body(script[1].stdout) && empty_body(script[1].stderr)">no output</span>
+    </div>
+  </div>
+  
+</div>
