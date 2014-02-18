@@ -35,7 +35,8 @@
   [path]
   (let [config    (read-config path)
         codec     (get-instance (:codec config))
-        transport (get-instance (:transport config) codec)
+        signer    (get-instance (:security config))
+        transport (get-instance (:transport config) codec signer)
         scenarios (get-instance (:scenarios config))]
     (assoc config
       :transport transport
