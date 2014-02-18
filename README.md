@@ -20,4 +20,5 @@ fleet aims to improve on amiral in the following ways:
   results in a web view
 - Deprecate signing requests with ssh-keys and move to SSL
 - Provide a lighter-weight agent
+- Support arguments
 

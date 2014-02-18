@@ -14,10 +14,16 @@
       (str/replace input #"\{\{[0-9*]+\}\}" extract)))
 
 (defn prepare-command
-  [args {:keys [shell literal] :as command}]
-  (if (and shell (not literal))
-    (assoc command :shell (interpol shell args))
-    command))
+  [args command]
+  (cond
+   (string? command)
+   (interpol command args)
+
+   (and (:shell command) (not (:literal command)))
+   (update-in command [:shell] interpol args)
+
+   :else
+   command))
 
 (defn prepare
   [scenario profile args]

@@ -58,4 +58,5 @@
                      (>! sink payload)
                      (recur (<! resps)
                             (if (finished? payload) (dec need) need))))
+                 (>! sink {:type :stop})
                  (a/close! sink)))))))))

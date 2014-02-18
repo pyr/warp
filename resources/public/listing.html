@@ -55,6 +55,7 @@
             <span ng-show="command.service"><span class="label label-primary">service {{command.action}}</span> {{command.service}}</span>
             <span ng-show="command.sleep"><span class="label label-primary">sleep</span> {{command.sleep}}</span>
             <span ng-show="command == 'ping'"><span class="label label-primary">ping</span></span>
+            <span ng-show="is_script(command)"><span class="label label-primary">shell</span><small> <code ng-bind="command"></code></small></span>
           </th>
           <th><span class="label label-primary">complete</span></th>
         </thead>
@@ -88,7 +89,8 @@
       <span ng-show="script[0].shell"><span class="label label-primary">shell</span><small> <code ng-bind="script[0].shell"></code></small></span>
       <span ng-show="script[0].service"><span class="label label-primary">service {{script[0].action}}</span> {{script[0].service}}</span>
       <span ng-show="script[0].sleep"><span class="label label-primary">sleep</span> {{script[0].sleep}}</span>
-      <span ng-show="script[0] == 'ping'"><span class="label label-primary">ping</span></span>,
+      <span ng-show="script[0] == 'ping'"><span class="label label-primary">ping</span></span>
+      <span ng-show="is_script(script[0])"><span class="label label-primary">shell</span><small> <code ng-bind="script[0]"></code></small></span>,
       status: <span class="label" ng-class="get_color(script[1].status)">{{script[1].status}}</span>
     </div>
   

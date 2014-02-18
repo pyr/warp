@@ -120,6 +120,11 @@ app.controller('FleetHistory', function($scope, $routeParams, $scenario, $timeou
             return 'label-warning';
         }
     };
+
+    $scope.is_script = function(input) {
+        return ((typeof input == 'string') && (input != 'ping'));
+    };
+
     $scope.set_host = function(host) {
         $scope.host = host;
     }
@@ -151,6 +156,10 @@ app.controller('Fleet', function($scope, $routeParams, $location, $scenario) {
         } else {
             return 'label-warning';
         }
+    };
+
+    $scope.is_script = function(input) {
+        return ((typeof input == 'string') && (input != 'ping'));
     };
 
     $scope.scenarios = {};
