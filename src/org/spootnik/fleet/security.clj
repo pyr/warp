@@ -19,7 +19,7 @@
               cert (.readObject (PEMReader. (io/reader path)))]
           (->
            (doto (Signature/getInstance "SHA256withRSA")
-             (.initVerify cert)
+             (.initVerify (.getPublic cert))
              (.update (.getBytes input)))
            (.verify (-> sig .getBytes b64/decode)))))
       (sign [this input]
