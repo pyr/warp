@@ -1,6 +1,72 @@
-fleet: parallel scenario execution
-==================================
+fleet: distributed workflow management
+======================================
 
+fleet distributes scenarios across any number of machines.
+
+### The story
+
+Your applications span a large group of hosts and deployment
+involves several separate steps.
+
+Let's say that you have a web application deployment process
+that involves:
+
+- Updating a git repository
+- Restarting a service
+
+This process is likely the same for several profiles such as
+*test*, *staging* and *production*.
+
+fleet provides a DSL for writing scenarios and schedules
+executions over a pub-sub system, streaming the results
+to the controller which makes results available through
+an API and web view
+
+Command executions can be scheduled through the following means:
+
+- The web interface exposed by the controller
+- API queries to the controller
+- IRC/Campfire/Hipchat through a [hubot](http://hubot.github.io) script
+
+### A sample scenario
+
+```yaml
+## We give the scenario a name
+script_name: webapp-deploy
+
+## A matcher determines how 
+match:
+  and:
+    - fact: "platform"
+      value: "webapp-hosts"
+    - fact: "environment"
+      value: "staging"
+script:
+  - "apt-get update"
+  - shell: "puppet agent -t"
+    exits: [0, 2]
+  - "apt-get install webapp"
+  - service: "webapp"
+    action: "reload"
+timeout: 15000
+profiles:
+  production:
+    match:
+      and:
+        - fact: "platform"
+          value: "webapp-hosts"
+        - fact: "environment"
+          value: "production"
+```
+
+
+
+
+
+### Pub-Sub support
+
+Currently, fleet relies on the redis pub-sub functionnality
+for execution. 
 fleet works hand in hand with any number of
 [fleet-agent's](https://github.com/pyr/fleet-agent), schedules
 scenarios for execution.
