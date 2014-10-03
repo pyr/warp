@@ -1,0 +1,4 @@
+script_name: hello-world
+script:
+  - "echo hello world"
+timeout: 15000

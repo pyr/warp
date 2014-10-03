@@ -1,0 +1,6 @@
+{
+    "cacert": "ca/ca.pem",
+    "privkey": "ca/_default.key",
+    "redis_host": "localhost",
+    "redis_port": 6379
+}

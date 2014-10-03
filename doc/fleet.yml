@@ -4,12 +4,12 @@ transport:
   use: org.spootnik.fleet.transport.redis/redis-transport
 security:
   use: org.spootnik.fleet.security/rsa-store
-  ca-priv: "/var/lib/puppet/ssl/ca/ca_key.pem"
-  certdir: "/var/lib/puppet/ssl/public_keys"
+  ca-priv: "doc/ca/ca.key"
+  certdir: "doc/ca"
   suffix: "pem"
 scenarios:
   use: org.spootnik.fleet.api/standard-scenario-store
-  path: "/tmp/scenarios"
+  path: "doc/scenarios"
 http:
   port: 8080
 
