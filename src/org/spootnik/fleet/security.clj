@@ -22,7 +22,9 @@
                                  {:pem pem :path ca-priv})))]
     (reify AuthStore
       (verify [this host input sig]
-        (let [path (format "%s/%s.%s" certdir host suffix)
+        (let [candidate (format "%s/%s.%s" certdir host suffix)
+              path (if (.exists (io/file candidate)) candidate
+                       (format "%s/_default.%s" certdir suffix))
               pem (.readObject (PEMReader. (io/reader path)))
               public (cond
                       (instance? java.security.PublicKey pem)
