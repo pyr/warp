@@ -14,20 +14,26 @@
   (Security/addProvider (BouncyCastleProvider.))
   (let [pem (.readObject (PEMReader. (io/reader ca-priv)))
         private (cond
-                 (instance? java.security.KeyPair pem) (.getPrivate pem)
-                 :else (throw (ex-info
-                               (str "dunno how to get private key")
-                               {:pem pem :path ca-priv})))]
+                 (instance? java.security.KeyPair pem)
+                 (.getPrivate pem)
+
+                 :else
+                 (throw (ex-info "dunno how to get private key"
+                                 {:pem pem :path ca-priv})))]
     (reify AuthStore
       (verify [this host input sig]
         (let [path (format "%s/%s.%s" certdir host suffix)
               pem (.readObject (PEMReader. (io/reader path)))
               public (cond
-                      (instance? java.security.PublicKey pem) pem
-                      (instance? java.security.cert.X509Certificate pem) (.getPublicKey pem)
-                      :else (throw (ex-info
-                                    (str "dunno how to get public key")
-                                    {:pem pem :path path})))]
+                      (instance? java.security.PublicKey pem)
+                      pem
+
+                      (instance? java.security.cert.X509Certificate pem)
+                      (.getPublicKey pem)
+
+                      :else
+                      (throw (ex-info "dunno how to get public key"
+                                      {:pem pem :path path})))]
           (->
            (doto (Signature/getInstance "SHA256withRSA")
              (.initVerify public)

@@ -22,8 +22,8 @@
           (security/verify signer (:host decoded) msg sig)
           (>!! ch {:chan chan :msg decoded})
           (catch Exception e
-            (warn "unable to check signature of received message from "
-                  (:host decoded) e)))))))
+            (warn e "unable to check signature of received message from "
+                  (:host decoded))))))))
 
 (defn rpool
   [{:keys [host port timeout max-active max-idle max-wait]
