@@ -53,10 +53,10 @@
       (join ":" (butlast parts)))))
 
 (defn redis-transport
-  [{:keys [inbuf] :or {inbuf 10}} codec signer]
+  [{:keys [inbuf pool] :or {inbuf 10 pool {}}} codec signer]
 
   (let [ch   (chan inbuf)
-        pool (rpool {})
+        pool (rpool pool)
         pub  (pub ch get-chan)
         ptrn "fleet:*"]
 
