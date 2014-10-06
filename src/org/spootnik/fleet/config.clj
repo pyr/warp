@@ -1,6 +1,16 @@
 (ns org.spootnik.fleet.config
   (:require [clj-yaml.core :as yaml]))
 
+(def default-logging
+  "Logging can be bypassed if a log4j configuration is provided to the underlying JVM"
+  {:use "org.spootnik.fleet.logging/start-logging"
+   :pattern "%p [%d] %t - %c - %m%n"
+   :external false
+   :console true
+   :files  []
+   :level  "info"
+   :overrides {:io.pithos "debug"}})
+
 (defn find-ns-var
   "Find a symbol in a namespace"
   [s]
@@ -34,6 +44,7 @@
 (defn init
   [path]
   (let [config    (read-config path)
+        logging   (get-instance (merge default-logging (:logging config)))
         codec     (get-instance (:codec config))
         signer    (get-instance (:security config))
         transport (get-instance (:transport config) codec signer)
