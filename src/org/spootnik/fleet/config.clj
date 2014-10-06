@@ -9,7 +9,7 @@
    :console true
    :files  []
    :level  "info"
-   :overrides {:io.pithos "debug"}})
+   :overrides {:org.spootnik.fleet "debug"}})
 
 (defn find-ns-var
   "Find a symbol in a namespace"
