@@ -26,7 +26,7 @@
                   (:host decoded))))))))
 
 (defn rpool
-  [{:keys [host port timeout max-idle max-total]
+  [{:keys [host port timeout max-idle max-total max-wait]
     :or {max-wait   200
          max-idle   5
          max-total  10
