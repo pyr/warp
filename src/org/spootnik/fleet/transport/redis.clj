@@ -1,5 +1,5 @@
 (ns org.spootnik.fleet.transport.redis
-  (:require [clojure.core.async           :refer [>!! chan pub sub unsub-all]]
+  (:require [clojure.core.async           :refer [put! chan pub sub] :as a]
             [clojure.string               :refer [split join]]
             [clojure.tools.logging        :refer [warn]]
             [org.spootnik.fleet.codec     :as codec]
@@ -20,7 +20,7 @@
             decoded (codec/decode codec msg)]
         (try
           (security/verify signer (:host decoded) msg sig)
-          (>!! ch {:chan chan :msg decoded})
+          (put! ch {:chan chan :msg decoded})
           (catch Exception e
             (warn e "unable to check signature of received message from "
                   (:host decoded))))))))
@@ -53,9 +53,9 @@
       (join ":" (butlast parts)))))
 
 (defn redis-transport
-  [{:keys [inbuf pool] :or {inbuf 10 pool {}}} codec signer]
+  [{:keys [inbuf pool] :or {inbuf 200 pool {}}} codec signer]
 
-  (let [ch   (chan inbuf)
+  (let [ch   (chan (a/dropping-buffer inbuf))
         pool (rpool pool)
         pub  (pub ch get-chan)
         ptrn "fleet:*"]
@@ -79,7 +79,8 @@
               (.publish client (str chan ":" sig) payload))
             (finally (.returnResource pool client)))))
       (subscribe [this chans]
-        (mapv (partial sub pub) chans (repeatedly #(chan inbuf))))
+        (mapv (partial sub pub) chans
+              (repeatedly #(chan (a/dropping-buffer inbuf)))))
       (unsubscribe [this chans]
         (doseq [chan chans]
-          (unsub-all pub chan))))))
+          (a/unsub-all pub chan))))))

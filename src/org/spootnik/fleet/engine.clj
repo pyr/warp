@@ -1,5 +1,6 @@
 (ns org.spootnik.fleet.engine
   (:require [clojure.core.async           :refer [chan >! <! alts! go] :as a]
+            [clojure.tools.logging        :refer [info]]
             [org.spootnik.fleet.transport :as transport]))
 
 (def ack-timeout 2000)
@@ -33,7 +34,7 @@
 
 (defn reactor
   []
-  (let [transport    (atom nil)]
+  (let [transport (atom nil)]
     (reify
       Engine
       (set-transport! [this new-transport]
@@ -43,20 +44,23 @@
               payload           (assoc payload :id id)
               [pubchan & chans] (chan-names id)
               [ack-ch resp-ch]  (transport/subscribe @transport chans)]
+          (info "emitting new request with id " id)
           (transport/publish @transport pubchan payload)
           (go
-             (let [resps   (chan 10)
-                   acks    (chan 10)
+             (let [resps   (chan (a/dropping-buffer 200))
+                   acks    (chan (a/dropping-buffer 200))
                    timeout (a/timeout ack-timeout)
                    need    (siphon! ack-ch acks :ack timeout valid?)]
                (a/pipe acks sink false)
                (siphon! resp-ch resps :resp (a/timeout (:timeout payload)))
-               (go
+
+               (let [need (<! need)]
+                 (info "waiting for" (str need) "replies")
                  (loop [payload (<! resps)
-                        need    (<! need)]
+                        need    need]
                    (when (and (pos? need) payload)
                      (>! sink payload)
                      (recur (<! resps)
-                            (if (finished? payload) (dec need) need))))
-                 (>! sink {:type :stop})
-                 (a/close! sink)))))))))
+                            (if (finished? payload) (dec need) need)))))
+               (>! sink {:type :stop})
+               (a/close! sink))))))))
