@@ -33,12 +33,32 @@
   [(str "fleetreq:" id) (str "fleet:ack:" id) (str "fleet:res:" id)])
 
 (defn reactor
-  []
-  (let [transport (atom nil)]
+  [keepalive]
+  (let [transport    (atom nil)
+        subscription (atom nil)]
     (reify
       Engine
       (set-transport! [this new-transport]
-        (reset! transport new-transport))
+        (let [close-ch (chan)]
+          (reset! transport new-transport)
+          (when @subscription
+            (a/put! @subscription :close)
+            (a/close! @subscription))
+          (reset! subscription close-ch)
+          (go
+            (loop []
+              (let [tm  (a/timeout keepalive)
+                    sig (alts! [close-ch tm])]
+                (when (= tm sig)
+                  ;; every keepalive interval
+                  ;; send a dummy script on the wire to
+                  ;; keep machines alive
+                  (request this
+                           {:script_name "ping"
+                            :script ["ping"]
+                            :timeout 1000}
+                           (chan (a/dropping-buffer 0)))
+                  (recur)))))))
       (request [this payload sink]
         (let [id                (str (java.util.UUID/randomUUID))
               payload           (assoc payload :id id)

@@ -24,11 +24,11 @@
     (when help
       (println banner)
       (System/exit 0))
-    (let [{:keys [transport codec http scenarios]} (config/init path)
-          engine                                   (engine/reactor)]
+    (let [cfg    (config/init path)
+          engine (engine/reactor (:keepalive cfg))]
       (info "Creating request processing engine")
-      (engine/set-transport! engine transport)
+      (engine/set-transport! engine (:transport cfg))
       (info "Starting PubSub transport")
-      (service/start! transport)
+      (service/start! (:transport cfg))
       (info "Starting HTTP service")
-      (http/start-http scenarios engine http))))
+      (http/start-http (:scenarios cfg) engine (:http cfg)))))
