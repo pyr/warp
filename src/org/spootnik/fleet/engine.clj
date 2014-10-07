@@ -58,6 +58,7 @@
                     (request this
                              {:script_name "ping"
                               :script ["ping"]
+                              :id (str (java.util.UUID/randomUUID))
                               :timeout 1000}
                              (chan (a/dropping-buffer 0)))
                     (recur))))))))
