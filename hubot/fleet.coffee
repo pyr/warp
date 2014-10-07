@@ -47,7 +47,7 @@ module.exports = (robot) ->
 
   fleet_url = process.env.HUBOT_FLEET_URL
 
-  robot.respond /fleet me (\w+)( to (\w+))?( with (.*))?/i, (msg) ->
+  robot.respond /fleet me (\S+)( to (\S+))?( with (.*))?/i, (msg) ->
 
     scenario = msg.match[1]
     args = []
