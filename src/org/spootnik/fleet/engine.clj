@@ -45,20 +45,22 @@
             (a/put! @subscription :close)
             (a/close! @subscription))
           (reset! subscription close-ch)
-          (go
-            (loop []
-              (let [tm  (a/timeout keepalive)
-                    sig (alts! [close-ch tm])]
-                (when (= tm sig)
-                  ;; every keepalive interval
-                  ;; send a dummy script on the wire to
-                  ;; keep machines alive
-                  (request this
-                           {:script_name "ping"
-                            :script ["ping"]
-                            :timeout 1000}
-                           (chan (a/dropping-buffer 0)))
-                  (recur)))))))
+          (when keepalive
+            (info "found keepalive, starting loop")
+            (go
+              (loop []
+                (let [tm  (a/timeout keepalive)
+                      sig (alts! [close-ch tm])]
+                  (when (= tm sig)
+                    ;; every keepalive interval
+                    ;; send a dummy script on the wire to
+                    ;; keep machines alive
+                    (request this
+                             {:script_name "ping"
+                              :script ["ping"]
+                              :timeout 1000}
+                             (chan (a/dropping-buffer 0)))
+                    (recur))))))))
       (request [this payload sink]
         (let [id                (str (java.util.UUID/randomUUID))
               payload           (assoc payload :id id)
