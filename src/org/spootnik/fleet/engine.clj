@@ -45,12 +45,12 @@
             (a/put! @subscription :close)
             (a/close! @subscription))
           (reset! subscription close-ch)
-          (when keepalive
+          (when (pos? keepalive)
             (info "found keepalive, starting loop")
             (go
               (loop []
-                (let [tm  (a/timeout keepalive)
-                      sig (alts! [close-ch tm])]
+                (let [tm      (a/timeout keepalive)
+                      [_ sig] (alts! [close-ch tm])]
                   (when (= tm sig)
                     ;; every keepalive interval
                     ;; send a dummy script on the wire to
