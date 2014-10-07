@@ -93,9 +93,7 @@
   [{:keys [origins] :or {origins []}}]
   (let [patterns (mapv re-pattern origins)]
     (fn [origin]
-      (if (nil? origin)
-        false
-        (some #(re-find % origin) patterns)))))
+      (and origin (some #(re-find % origin) patterns)))))
 
 (defn start-http
   [scenarios engine opts]
