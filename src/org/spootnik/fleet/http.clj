@@ -60,6 +60,7 @@
                   (http/send! hchan
                               {:status 200
                                :headers {"Content-Type" "text/event-stream"
+                                         "X-Accel-Buffering" "no"
                                          "Cache-Control" "no-cache"}
                                :body (format "data: %s\n\n"
                                              (generate-string msg))}
