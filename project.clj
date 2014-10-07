@@ -25,4 +25,5 @@
                   :exclusions [javax.mail/mail
                                javax.jms/jms
                                com.sun.jdmk/jmxtools
-                               com.sun.jmx/jmxri]]])
+                               com.sun.jmx/jmxri]]
+                 [jumblerg/ring.middleware.cors "1.0.1"]])

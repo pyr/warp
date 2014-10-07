@@ -12,7 +12,8 @@
             [org.spootnik.fleet.api         :as api]
             [org.spootnik.fleet.engine      :as engine]
             [org.spootnik.fleet.history     :as history]
-            [org.httpkit.server             :as http]))
+            [org.httpkit.server             :as http]
+            [ring.middleware.cors           :refer [wrap-cors]]))
 
 (defn json-response
   [body]
@@ -88,6 +89,11 @@
              {:status (or status 500)
               :body (generate-string {:status (.getMessage e)})})))))
 
+(defn yield-cors-match
+  [{:keys [origins] :or {origins []}}]
+  (fn [origin]
+    (some #(re-find % origin) origins)))
+
 (defn start-http
   [scenarios engine opts]
   (api/load! scenarios)
@@ -95,5 +101,6 @@
                        (wrap-error)
                        (wrap-keyword-params)
                        (wrap-params)
+                       (wrap-cors (yield-cors-match opts))
                        (json/wrap-json-body {:keywords? true}))
                    opts))
