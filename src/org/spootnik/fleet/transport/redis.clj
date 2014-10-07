@@ -26,17 +26,17 @@
                   (:host decoded))))))))
 
 (defn rpool
-  [{:keys [host port timeout max-active max-idle max-wait]
-    :or {max-active 5
-         max-wait   200
+  [{:keys [host port timeout max-idle max-total]
+    :or {max-wait   200
+         max-idle   5
+         max-total  10
          timeout    200
          host       "localhost"
          port       6379}}]
   (-> (doto (redis.clients.jedis.JedisPoolConfig.)
-        (.setMaxActive max-active)
-        (.setMaxIdle (or max-idle max-active))
+        (.setMaxIdle max-idle)
         (.setTestOnBorrow true)
-        (.setMaxWait max-wait))
+        (.setMaxWaitMillis max-wait))
       (redis.clients.jedis.JedisPool. host port timeout)))
 
 (defn rpublish
