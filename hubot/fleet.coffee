@@ -6,6 +6,7 @@
 #
 # Configuration:
 #   HUBOT_FLEET_URL - contains fleet url
+#   HUBOT_FLEET_SHOW_URL - if necessary, a different url for display purposes
 #
 
 class Fleet
@@ -15,7 +16,7 @@ class Fleet
   done: 0
 
   constructor: (@scenario, @client) ->
-    history = process.env.HUBOT_FLEET_URL + '#/history/' + @scenario
+    history = (process.env.HUBOT_FLEET_SHOW_URL or process.env.HUBOT_FLEET_URL) + '#/history/' + @scenario
     @client.send "executing " + scenario + " (waiting 2 seconds for acks, reporting to: " + history + ')'
 
   process: (msg) ->
