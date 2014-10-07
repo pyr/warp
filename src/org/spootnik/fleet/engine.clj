@@ -1,6 +1,6 @@
 (ns org.spootnik.fleet.engine
   (:require [clojure.core.async           :refer [chan >! <! alts! go] :as a]
-            [clojure.tools.logging        :refer [info]]
+            [clojure.tools.logging        :refer [info error]]
             [org.spootnik.fleet.transport :as transport]))
 
 (def ack-timeout 2000)
@@ -55,12 +55,16 @@
                     ;; every keepalive interval
                     ;; send a dummy script on the wire to
                     ;; keep machines alive
-                    (request this
-                             {:script_name "ping"
-                              :script ["ping"]
-                              :id (str (java.util.UUID/randomUUID))
-                              :timeout 1000}
-                             (chan (a/dropping-buffer 0)))
+                    (info "pinging clients")
+                    (try
+                      (request this
+                               {:script_name "ping"
+                                :script ["ping"]
+                                :id (str (java.util.UUID/randomUUID))
+                                :timeout 1000}
+                               (chan (a/dropping-buffer 0)))
+                      (catch Exception e
+                        (error e "cannot send keepalive")))
                     (recur))))))))
       (request [this payload sink]
         (let [id                (str (java.util.UUID/randomUUID))
