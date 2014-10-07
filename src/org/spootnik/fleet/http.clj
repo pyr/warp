@@ -91,8 +91,9 @@
 
 (defn yield-cors-match
   [{:keys [origins] :or {origins []}}]
-  (fn [origin]
-    (some #(re-find % origin) origins)))
+  (let [patterns (mapv re-pattern origins)]
+    (fn [origin]
+      (some #(re-find % origin) patterns))))
 
 (defn start-http
   [scenarios engine opts]
