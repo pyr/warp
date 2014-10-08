@@ -1,6 +1,6 @@
 (ns org.spootnik.fleet.http
   (:require [compojure.core                 :refer [routes GET POST PUT DELETE]]
-            [clojure.tools.logging          :refer [error]]
+            [clojure.tools.logging          :refer [error info]]
             [clojure.pprint                 :refer [pprint]]
             [ring.util.response             :refer [response redirect]]
             [cheshire.core                  :refer [generate-string]]
@@ -13,6 +13,7 @@
             [org.spootnik.fleet.engine      :as engine]
             [org.spootnik.fleet.history     :as history]
             [org.httpkit.server             :as http]
+            [sun.misc                       :refer [Signal SignalHandler]]
             [ring.middleware.cors           :refer [wrap-cors]]))
 
 (defn json-response
@@ -33,6 +34,9 @@
 
    (PUT "/scenarios" []
         (json-response (api/save! scenarios)))
+
+   (DELETE "/scenarios" []
+           (json-response (api/clear! scenarios)))
 
    (GET "/scenarios/:script_name" [script_name]
         (json-response (api/get! scenarios script_name)))
@@ -98,6 +102,11 @@
 (defn start-http
   [scenarios engine opts]
   (api/load! scenarios)
+  (Signal/handle (Signal. "HUP")
+                 (reify SignalHandler
+                   (handle [_ _] (do (info "SIGHUP caught")
+                                     (api/clear!)
+                                     (api/load!)))))
   (http/run-server (-> (api-routes scenarios engine)
                        (wrap-error)
                        (wrap-keyword-params)
