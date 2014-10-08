@@ -9,6 +9,8 @@
 #   HUBOT_FLEET_SHOW_URL - if necessary, a different url for display purposes
 #
 
+EventSource = require 'eventsource'
+
 class Fleet
   acks: 0
   ack_starting: 0
@@ -61,8 +63,10 @@ module.exports = (robot) ->
     url = fleet_url + "/scenarios/" + scenario + "/executions"
     if args.length > 0
       url += '?' + args.join("&")
-    msg.http(url).get((err, req) ->
-      req.addListener 'response', (resp) ->
-        resp.addListener 'data', (chunk) ->
-          data = chunk.toString('utf8').substr(6)
-          fleet.process(JSON.parse(data)))()
+
+    es = new EventSource(url)
+    es.onmessage = (e) ->
+      fleet.process JSON.parse(e.data)
+    es.onerror = ->
+      robot.logger.warning "#{scenario}: unable to parse SSE events"
+      msg.send "#{scenario}: unable to parse SSE events"
