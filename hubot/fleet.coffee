@@ -54,10 +54,10 @@ module.exports = (robot) ->
     scenario = msg.match[1]
     args = []
     if msg.match[3]
-      args.push('profile=' + msg.match[3])
+      args.push('profile=' + encodeURIComponent(msg.match[3]))
 
     if msg.match[5]
-      args.push('args=' + arg) for arg in msg.match[5].split(" ")
+      args.push('args=' + encodeURIComponent(arg)) for arg in msg.match[5].split(" ")
 
     fleet = new Fleet(scenario, msg)
     url = fleet_url + "/scenarios/" + scenario + "/executions"
