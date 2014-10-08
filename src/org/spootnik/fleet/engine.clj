@@ -45,7 +45,7 @@
             (a/put! @subscription :close)
             (a/close! @subscription))
           (reset! subscription close-ch)
-          (when (pos? keepalive)
+          (when (and keepalive (pos? keepalive))
             (info "found keepalive, starting loop")
             (go
               (loop []
