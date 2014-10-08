@@ -34,6 +34,9 @@
    (PUT "/scenarios" []
         (json-response (api/save! scenarios)))
 
+   (DELETE "/scenarios" []
+           (json-response (api/clear! scenarios)))
+
    (GET "/scenarios/:script_name" [script_name]
         (json-response (api/get! scenarios script_name)))
 

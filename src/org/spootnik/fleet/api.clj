@@ -37,6 +37,7 @@
   (all! [this])
   (load! [this])
   (delete! [this script_name])
+  (clear! [this])
   (get! [this script_name]))
 
 (defn standard-scenario-store
@@ -61,6 +62,8 @@
           (.delete (io/file (str path "/" script_name)))
           (catch Exception e))
         (swap! scenarios dissoc script_name))
+      (clear! [this]
+        (reset! scenarios {}))
       (get! [this script_name]
         (or
          (get @scenarios script_name)
