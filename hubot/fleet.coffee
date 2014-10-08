@@ -68,5 +68,4 @@ module.exports = (robot) ->
     es.onmessage = (e) ->
       fleet.process JSON.parse(e.data)
     es.onerror = ->
-      robot.logger.warning "#{scenario}: unable to parse SSE events"
-      msg.send "#{scenario}: unable to parse SSE events"
+      es.close()
