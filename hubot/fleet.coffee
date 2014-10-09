@@ -9,6 +9,8 @@
 #   HUBOT_FLEET_SHOW_URL - if necessary, a different url for display purposes
 #
 
+EventSource = require 'eventsource'
+
 class Fleet
   acks: 0
   ack_starting: 0
@@ -52,17 +54,18 @@ module.exports = (robot) ->
     scenario = msg.match[1]
     args = []
     if msg.match[3]
-      args.push('profile=' + msg.match[3])
+      args.push('profile=' + encodeURIComponent(msg.match[3]))
 
     if msg.match[5]
-      args.push('args=' + arg) for arg in msg.match[5].split(" ")
+      args.push('args=' + encodeURIComponent(arg)) for arg in msg.match[5].split(" ")
 
     fleet = new Fleet(scenario, msg)
     url = fleet_url + "/scenarios/" + scenario + "/executions"
     if args.length > 0
       url += '?' + args.join("&")
-    msg.http(url).get((err, req) ->
-      req.addListener 'response', (resp) ->
-        resp.addListener 'data', (chunk) ->
-          data = chunk.toString('utf8').substr(6)
-          fleet.process(JSON.parse(data)))()
+
+    es = new EventSource(url)
+    es.onmessage = (e) ->
+      fleet.process JSON.parse(e.data)
+    es.onerror = ->
+      es.close()
