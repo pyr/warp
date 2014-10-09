@@ -49,9 +49,12 @@ module.exports = (robot) ->
 
   fleet_url = process.env.HUBOT_FLEET_URL
 
-  robot.respond /fleet me (\S+)( to (\S+))?( with (.*))?/i, (msg) ->
+  robot.respond /fleet me (.*?)( to (\S+))?( with (.*))?$/i, (msg) ->
 
     scenario = msg.match[1]
+      .split(/\ +/)
+      .filter((a) -> a)
+      .join("-")
     args = []
     if msg.match[3]
       args.push('profile=' + encodeURIComponent(msg.match[3]))
