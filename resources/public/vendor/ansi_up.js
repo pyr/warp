@@ -90,10 +90,16 @@
           self.fg = null;
         } else if ((num >= 40) && (num < 48)) {
           self.bg = "rgb(" + ANSI_COLORS[0][(num % 10)] + ")";
+        } else if ((num >= 90) && (num < 98)) {
+          self.fg = "rgb(" + ANSI_COLORS[1][(num % 10)] + ")";
+        } else if ((num >= 100) && (num < 108)) {
+          self.bg = "rgb(" + ANSI_COLORS[1][(num % 10)] + ")";
+        } else {
+          console.log("Unhandled code", num);
         }
       });
 
-      if ((self.fg === null) && (self.bg === null)) {
+      if ((self.fg === null) && (self.bg === null) && (self.bright === 0)) {
         return orig_txt;
       } else {
         var style = [];
@@ -101,6 +107,8 @@
           style.push("color:" + self.fg);
         if (self.bg)
           style.push("background-color:" + self.bg);
+        if (self.bright)
+          style.push("font-weight: bold");
         return ["<span style=\"" + style.join(';') + "\">", orig_txt, "</span>"];
       }
     };

@@ -5,6 +5,15 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :aot :all
   :main org.spootnik.fleet
+  :plugins [[lein-cljsbuild "1.0.4-SNAPSHOT"]]
+  :cljsbuild {
+    :builds [{:id "om-fleet"
+              :source-paths ["src/org/spootnik/om_fleet"]
+              :compiler {
+                :output-to "resources/public/fleet/app.js"
+                :output-dir "resources/public/fleet"
+                :optimizations :none
+                :source-map true}}]}
   :dependencies [[org.clojure/clojure           "1.6.0"]
                  [org.clojure/core.async        "0.1.346.0-17112a-alpha"]
                  [org.clojure/tools.logging     "0.3.1"]
@@ -26,4 +35,14 @@
                                javax.jms/jms
                                com.sun.jdmk/jmxtools
                                com.sun.jmx/jmxri]]
-                 [jumblerg/ring.middleware.cors "1.0.1"]])
+                 [jumblerg/ring.middleware.cors "1.0.1"]
+
+                 [org.clojure/clojurescript     "0.0-2356"]
+                 [om                            "0.7.1"]
+                 [secretary                     "1.2.1-SNAPSHOT"]
+                 [racehub/om-bootstrap          "0.3.0"
+                  :exclusions [org.clojure/clojure]]
+                 [prismatic/om-tools            "0.3.2"
+                  :exclusions [org.clojure/clojure]]
+                 [cljs-ajax                     "0.3.3"]
+                 [com.ninjudd/eventual          "0.3.0"]])
