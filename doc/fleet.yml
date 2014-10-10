@@ -12,5 +12,5 @@ scenarios:
   path: "doc/scenarios"
 http:
   port: 8080
-
-  
+  origins:
+    - "http://example.com"
