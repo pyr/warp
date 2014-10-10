@@ -5,7 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :aot :all
   :main org.spootnik.fleet
-  :plugins [[lein-cljsbuild "1.0.4-SNAPSHOT"]]
+  :plugins [[lein-cljsbuild "1.0.4-20140402.162426-2"]]
   :cljsbuild {
     :builds [{:id "om-fleet"
               :source-paths ["src/org/spootnik/om_fleet"]
@@ -39,7 +39,7 @@
 
                  [org.clojure/clojurescript     "0.0-2356"]
                  [om                            "0.7.1"]
-                 [secretary                     "1.2.1-SNAPSHOT"]
+                 [secretary                     "1.2.1-20140627.190529-1"]
                  [racehub/om-bootstrap          "0.3.0"
                   :exclusions [org.clojure/clojure]]
                  [prismatic/om-tools            "0.3.2"
