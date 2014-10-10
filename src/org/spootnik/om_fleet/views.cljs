@@ -93,7 +93,8 @@
                                          (schedule-scenario
                                            @(om/get-shared owner :scenario)
                                            (keyword profile)
-                                           (om/get-shared owner :sync)))}
+                                           (om/get-shared owner :sync)
+                                           e))}
                             "execute")))))
 
 (def colors {"finished" "primary"
