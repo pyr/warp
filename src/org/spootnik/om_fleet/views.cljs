@@ -127,7 +127,7 @@
           (string? script) (cond
                              (= script "ping") script
                              :else "shell")
-          (script "service") (str "service" (script "action"))
+          (script "service") (str "service " (script "action"))
           (script "sleep") "sleep"
           (script "shell") "shell"
           :else "unknown")) " "
