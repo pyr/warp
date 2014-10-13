@@ -42,11 +42,11 @@
        (has-key? :host) {:host (interpol (:host match) args)}))))
 
 (defn prepare
-  [scenario profile args]
+  [scenario profile matchargs args]
   (let [{:keys [script match] :as scenario}
         (merge scenario (get-in scenario [:profiles profile]))]
     (assoc scenario
-      :match (prepare-match match args)
+      :match (prepare-match match matchargs)
       :script (map (partial prepare-command args) script))))
 
 (defprotocol ScenarioStore

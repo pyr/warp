@@ -49,6 +49,9 @@
                 args        (if-let [args (-> request :params :args)]
                               (if (sequential? args) args [args])
                               [])
+                matchargs   (if-let [args (-> request :params :matchargs)]
+                              (if (sequential? args) args [args])
+                              [])
                 scenario    (api/get! scenarios script_name)
                 profile     (-> request :params :profile keyword)
                 ch          (async/chan 10)
@@ -77,7 +80,7 @@
                   (catch Exception e
                     (error e "cannot handle incoming message"))))
               (engine/request engine
-                              (api/prepare scenario profile args)
+                              (api/prepare scenario profile matchargs args)
                               ch))))
 
      ;; defaults
