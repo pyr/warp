@@ -6,12 +6,18 @@
 
 
 (defn interpol
-    [input args]
-    (let [clean   #(str/replace % #"(\{\{|\}\})" "")
-          args    (assoc (into {} (map-indexed #(vector (str %1) %2) args))
-                    "*" (str/join " " args))
-          extract (fn [k] (get args (clean k) ""))]
-      (str/replace input #"\{\{[0-9*]+\}\}" extract)))
+  ([input args not-found]
+     (let [clean   #(str/replace % #"(\{\{|\}\})" "")
+           args    (assoc (into {} (map-indexed #(vector (str %1) %2) args))
+                     "*" (str/join " " args))
+           extract (fn [k] (get args
+                                (clean k)
+                                (if (fn? not-found)
+                                  (not-found)
+                                  not-found)))]
+       (str/replace input #"\{\{[0-9*]+\}\}" extract)))
+  ([input args]
+     (interpol input args "")))
 
 (defn prepare-command
   [args command]
