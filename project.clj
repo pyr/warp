@@ -7,20 +7,13 @@
   :main org.spootnik.fleet
   :plugins [[lein-cljsbuild "1.0.4-20140402.162426-2"]]
   :cljsbuild {
-    :builds {
-      :dev {
-        :source-paths ["src/org/spootnik/om_fleet"]
-        :compiler {
-          :output-to "resources/public/fleet/app.js"
-          :optimizations :none
-          :source-map true}}
-      :prod {
-        :source-paths ["src/org/spootnik/om_fleet"]
-        :compiler {
-          :output-to "resources/public/fleet/app.js"
-          :output-dir "resources/public/fleet"
-          :optimizations :advanced
-          :source-map "resources/public/fleet/app.js.map"}}}}
+    :builds [{:id "om-fleet"
+              :source-paths ["src/org/spootnik/om_fleet"]
+              :compiler {
+                :output-to "resources/public/fleet/app.js"
+                :output-dir "resources/public/fleet"
+                :optimizations :none
+                :source-map true}}]}
   :dependencies [[org.clojure/clojure           "1.6.0"]
                  [org.clojure/core.async        "0.1.346.0-17112a-alpha"]
                  [org.clojure/tools.logging     "0.3.1"]
