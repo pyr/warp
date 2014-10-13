@@ -18,7 +18,7 @@ class Fleet
   done: 0
 
   constructor: (@scenario, @client) ->
-    history = (process.env.HUBOT_FLEET_SHOW_URL or process.env.HUBOT_FLEET_URL) + '#/history/' + @scenario
+    history = (process.env.HUBOT_FLEET_SHOW_URL or process.env.HUBOT_FLEET_URL) + '#/scenarios/' + @scenario
     @client.send "executing " + scenario + ", waiting 2 seconds for acks, reporting to: " + history
 
   process: (msg) ->
