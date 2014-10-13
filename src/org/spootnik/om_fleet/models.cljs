@@ -4,8 +4,7 @@
             [cljs.core.async             :refer [chan <! >! pub sub put! close!]]
             [org.spootnik.om-fleet.utils :refer [pretty-match redirect]]))
 
-(def base-url "https://control.internal.exoscale.ch")
-;(def base-url "")
+(def base-url "")
 
 (defprotocol Resource
   (resource [this])
