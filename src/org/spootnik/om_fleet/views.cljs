@@ -258,6 +258,9 @@
                                            (script "service") " "
                                            (script "action") " "))
 
+        (and (map? script) (script "shell"))
+        (dom/span nil "Script " (dom/code nil (script "shell") " "))
+
         :else
         (dom/span nil "Script " (dom/code nil script) " "))
 
@@ -265,7 +268,10 @@
     (when-not (empty? stdout)
       (om/build output {:typ "stdout" :out stdout}))
     (when-not (empty? stderr)
-      (om/build output {:typ "stderr" :out stderr})))))
+      (om/build output {:typ "stderr" :out stderr}))
+
+    (when code
+      (dom/p {:class "text-muted"} "Process returned " (dom/code nil code))))))
 
 (defcomponent scenario-host-history
   [app owner]
