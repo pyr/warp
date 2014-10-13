@@ -247,9 +247,20 @@
     (dom/div nil
     (dom/h4 nil
       (cond
-        (= "ping" script) "Ping "
-        (nil? script) ""
-        :else (dom/span nil "Script " (dom/code nil script) " "))
+        (= "ping" script)
+        "Ping "
+
+        (nil? script)
+        ""
+
+        (and (map? script) (script "service"))
+        (dom/span nil "Service " (dom/code nil
+                                           (script "service") " "
+                                           (script "action") " "))
+
+        :else
+        (dom/span nil "Script " (dom/code nil script) " "))
+
       (r/label {:bs-style (colors status)} status))
     (when-not (empty? stdout)
       (om/build output {:typ "stdout" :out stdout}))
