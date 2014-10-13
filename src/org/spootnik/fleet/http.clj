@@ -80,7 +80,7 @@
                   (catch Exception e
                     (error e "cannot handle incoming message"))))
 
-              (info "sending request for %s [profile:%s] [matchargs:%s] [args:%s]"
+              (infof "sending request for %s [profile:%s] [matchargs:%s] [args:%s]"
                     scenario profile matchargs args)
               (engine/request engine
                               (api/prepare scenario profile matchargs args)
