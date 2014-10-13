@@ -67,12 +67,15 @@
 
       // Do proper handling of sequences (aka - injest vi split(';') into state machine
       //match,codes,txt = text.match(/([\d;]+)m(.*)/m);
-      var matches = text.match(/([\d;]+?)m([^]*)/m);
+      var matches = text.match(/([\d;]+?)?m([^]*)/m);
 
       if (!matches) return text;
 
       var orig_txt = matches[2];
-      var nums = matches[1].split(';');
+      var nums = [];
+      if (matches[1]) {
+          nums = matches[1].split(';');
+      }
 
       var self = this;
       nums.map(function (num_str) {
