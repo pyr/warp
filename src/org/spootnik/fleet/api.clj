@@ -34,6 +34,7 @@
   [index]
   (throw (ex-info "missing required argument"
                   {:type :missing
+                   :status 400
                    :index index})))
 
 (defn prepare-match
@@ -52,7 +53,9 @@
                                    (:and match))}
        (has-key? :host) {:host (interpol (:host match) args required-arg)}
        :else            (throw (ex-info "invalid match statement"
-                                        {:statement match}))))))
+                                        {:statement match
+                                         :type :badmatch
+                                         :status 400}))))))
 
 (defn prepare
   [scenario profile matchargs args]

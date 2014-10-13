@@ -97,10 +97,11 @@
   (fn [request]
     (try (handler request)
          (catch Exception e
-           (let [{:keys [status] :as data} (ex-data e)]
+           (let [{:keys [type status] :as data} (ex-data e)]
              (when (nil? data) (error e "unhandled exception"))
              {:status (or status 500)
-              :body (generate-string {:status (.getMessage e)})})))))
+              :body (generate-string {:status (.getMessage e)
+                                      :data data})})))))
 
 (defn yield-cors-match
   [{:keys [origins] :or {origins []}}]
