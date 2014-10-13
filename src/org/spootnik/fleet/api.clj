@@ -10,11 +10,10 @@
      (let [clean   #(str/replace % #"(\{\{|\}\})" "")
            args    (assoc (into {} (map-indexed #(vector (str %1) %2) args))
                      "*" (str/join " " args))
-           extract (fn [k] (get args
-                                (clean k)
-                                (if (fn? not-found)
-                                  (not-found)
-                                  not-found)))]
+           extract (fn [k] (or (get args (clean k))
+                               (if (fn? not-found)
+                                 (not-found k)
+                                 not-found)))]
        (str/replace input #"\{\{[0-9*]+\}\}" extract)))
   ([input args]
      (interpol input args "")))
@@ -31,28 +30,36 @@
    :else
    command))
 
+(defn required-arg
+  [index]
+  (throw (ex-info "missing required argument"
+                  {:type :missing
+                   :index index})))
+
 (defn prepare-match
   [args match]
   (if (string? match)
-    (interpol match args)
+    (interpol match args required-arg)
     (let [has-key? (or (some-> match keys set)
                      (constantly false))]
       (cond
        (has-key? :not)  {:not (prepare-match (:not match) args)}
        (has-key? :fact) {:fact (:fact match)
-                         :value (interpol (:value match) args)}
+                         :value (interpol (:value match) args required-arg)}
        (has-key? :or)   {:or (map (partial prepare-match args)
                                   (:or match))}
        (has-key? :and)  {:and (map (partial prepare-match args)
                                    (:and match))}
-       (has-key? :host) {:host (interpol (:host match) args)}))))
+       (has-key? :host) {:host (interpol (:host match) args required-arg)}
+       :else            (throw (ex-info "invalid match statement"
+                                        {:statement match}))))))
 
 (defn prepare
   [scenario profile matchargs args]
   (let [{:keys [script match] :as scenario}
         (merge scenario (get-in scenario [:profiles profile]))]
     (assoc scenario
-      :match (prepare-match match matchargs)
+      :match  (prepare-match match matchargs)
       :script (map (partial prepare-command args) script))))
 
 (defprotocol ScenarioStore
