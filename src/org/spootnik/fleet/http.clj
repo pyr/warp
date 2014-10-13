@@ -1,6 +1,6 @@
 (ns org.spootnik.fleet.http
   (:require [compojure.core                 :refer [routes GET POST PUT DELETE]]
-            [clojure.tools.logging          :refer [error]]
+            [clojure.tools.logging          :refer [error infof]]
             [clojure.pprint                 :refer [pprint]]
             [ring.util.response             :refer [response redirect]]
             [cheshire.core                  :refer [generate-string]]
@@ -79,6 +79,9 @@
                   (http/close hchan)
                   (catch Exception e
                     (error e "cannot handle incoming message"))))
+
+              (info "sending request for %s [profile:%s] [matchargs:%s] [args:%s]"
+                    scenario profile matchargs args)
               (engine/request engine
                               (api/prepare scenario profile matchargs args)
                               ch))))
