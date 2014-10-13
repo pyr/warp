@@ -25,11 +25,29 @@
    :else
    command))
 
+(defn prepare-match
+  [args match]
+  (if (string? match)
+    (interpol match args)
+    (let [has-key? (or (some-> match keys set)
+                     (constantly false))]
+      (cond
+       (has-key? :not)  {:not (prepare-match (:not match) args)}
+       (has-key? :fact) {:fact (:fact match)
+                         :value (interpol (:value match) args)}
+       (has-key? :or)   {:or (map (partial prepare-match args)
+                                  (:or match))}
+       (has-key? :and)  {:and (map (partial prepare-match args)
+                                   (:and match))}
+       (has-key? :host) {:host (interpol (:host match) args)}))))
+
 (defn prepare
   [scenario profile args]
-  (let [{:keys [script] :as scenario}
+  (let [{:keys [script match] :as scenario}
         (merge scenario (get-in scenario [:profiles profile]))]
-    (assoc scenario :script (map (partial prepare-command args) script))))
+    (assoc scenario
+      :match (prepare-match match args)
+      :script (map (partial prepare-command args) script))))
 
 (defprotocol ScenarioStore
   (upsert! [this scenario])
