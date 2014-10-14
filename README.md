@@ -17,6 +17,8 @@ that involves:
 This process is likely the same for several profiles such as
 *test*, *staging* and *production*.
 
+![fleet scenarios](http://i.imgur.com/6svdQH9.png)
+
 fleet provides a DSL for writing scenarios and schedules
 executions over a pub-sub system, streaming the results
 to the controller which makes results available through
@@ -59,7 +61,10 @@ profiles:
           value: "production"
 ```
 
+## More screenshots
 
+![fleet index](http://i.imgur.com/qawWTTX.png)
+![fleet output](http://i.imgur.com/sYVRCHf.png)
 
 
 
