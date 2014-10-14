@@ -18,7 +18,7 @@ class Fleet
   done: 0
 
   constructor: (@scenario, @client) ->
-    history = (process.env.HUBOT_FLEET_SHOW_URL or process.env.HUBOT_FLEET_URL) + '#/history/' + @scenario
+    history = (process.env.HUBOT_FLEET_SHOW_URL or process.env.HUBOT_FLEET_URL) + '#/scenarios/' + @scenario
     @client.send "executing " + scenario + ", waiting 2 seconds for acks, reporting to: " + history
 
   process: (msg) ->
@@ -49,7 +49,7 @@ module.exports = (robot) ->
 
   fleet_url = process.env.HUBOT_FLEET_URL
 
-  robot.respond /fleet me (.*?)( to (\S+))?( with (.*))?$/i, (msg) ->
+  robot.respond /fleet me (\S+)( to (\S+)( (\S+))?)?( with (.*))?$/i, (msg) ->
 
     scenario = msg.match[1]
       .split(/\ +/)
@@ -60,7 +60,10 @@ module.exports = (robot) ->
       args.push('profile=' + encodeURIComponent(msg.match[3]))
 
     if msg.match[5]
-      args.push('args=' + encodeURIComponent(arg)) for arg in msg.match[5].split(" ")
+      args.push('matchargs=' + encodeURIComponent(arg)) for arg in msg.match[5].split(" ")
+
+    if msg.match[7]
+      args.push('matchargs=' + encodeURIComponent(arg)) for arg in msg.match[7].split(" ")
 
     fleet = new Fleet(scenario, msg)
     url = fleet_url + "/scenarios/" + scenario + "/executions"

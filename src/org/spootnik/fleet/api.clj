@@ -6,12 +6,17 @@
 
 
 (defn interpol
-    [input args]
-    (let [clean   #(str/replace % #"(\{\{|\}\})" "")
-          args    (assoc (into {} (map-indexed #(vector (str %1) %2) args))
-                    "*" (str/join " " args))
-          extract (fn [k] (get args (clean k) ""))]
-      (str/replace input #"\{\{[0-9*]+\}\}" extract)))
+  ([input args not-found]
+     (let [clean   #(str/replace % #"(\{\{|\}\})" "")
+           args    (assoc (into {} (map-indexed #(vector (str %1) %2) args))
+                     "*" (str/join " " args))
+           extract (fn [k] (or (get args (clean k))
+                               (if (fn? not-found)
+                                 (not-found k)
+                                 not-found)))]
+       (str/replace input #"\{\{[0-9*]+\}\}" extract)))
+  ([input args]
+     (interpol input args "")))
 
 (defn prepare-command
   [args command]
@@ -25,11 +30,41 @@
    :else
    command))
 
+(defn required-arg
+  [index]
+  (throw (ex-info "missing required argument"
+                  {:type :missing
+                   :status 400
+                   :index index})))
+
+(defn prepare-match
+  [args match]
+  (if (string? match)
+    (interpol match args required-arg)
+    (let [has-key? (or (some-> match keys set)
+                     (constantly false))]
+      (cond
+       (nil? match)     match
+       (has-key? :not)  {:not (prepare-match args (:not match))}
+       (has-key? :fact) {:fact (:fact match)
+                         :value (interpol (:value match) args required-arg)}
+       (has-key? :or)   {:or (map (partial prepare-match args)
+                                  (:or match))}
+       (has-key? :and)  {:and (map (partial prepare-match args)
+                                   (:and match))}
+       (has-key? :host) {:host (interpol (:host match) args required-arg)}
+       :else            (throw (ex-info "invalid match statement"
+                                        {:statement match
+                                         :type :badmatch
+                                         :status 400}))))))
+
 (defn prepare
-  [scenario profile args]
-  (let [{:keys [script] :as scenario}
+  [scenario profile matchargs args]
+  (let [{:keys [script match] :as scenario}
         (merge scenario (get-in scenario [:profiles profile]))]
-    (assoc scenario :script (map (partial prepare-command args) script))))
+    (assoc scenario
+      :match  (prepare-match matchargs match)
+      :script (map (partial prepare-command args) script))))
 
 (defprotocol ScenarioStore
   (upsert! [this scenario])

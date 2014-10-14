@@ -1,6 +1,6 @@
 (ns org.spootnik.fleet.http
   (:require [compojure.core                 :refer [routes GET POST PUT DELETE]]
-            [clojure.tools.logging          :refer [error]]
+            [clojure.tools.logging          :refer [error infof]]
             [clojure.pprint                 :refer [pprint]]
             [ring.util.response             :refer [response redirect]]
             [cheshire.core                  :refer [generate-string]]
@@ -49,6 +49,9 @@
                 args        (if-let [args (-> request :params :args)]
                               (if (sequential? args) args [args])
                               [])
+                matchargs   (if-let [args (-> request :params :matchargs)]
+                              (if (sequential? args) args [args])
+                              [])
                 scenario    (api/get! scenarios script_name)
                 profile     (-> request :params :profile keyword)
                 ch          (async/chan 10)
@@ -76,8 +79,11 @@
                   (http/close hchan)
                   (catch Exception e
                     (error e "cannot handle incoming message"))))
+
+              (infof "sending request for %s [profile:%s] [matchargs:%s] [args:%s]"
+                    scenario profile matchargs args)
               (engine/request engine
-                              (api/prepare scenario profile args)
+                              (api/prepare scenario profile matchargs args)
                               ch))))
 
      ;; defaults
@@ -91,10 +97,11 @@
   (fn [request]
     (try (handler request)
          (catch Exception e
-           (let [{:keys [status] :as data} (ex-data e)]
-             (when (nil? data) (error e "unhandled exception"))
+           (let [{:keys [type status] :as data} (ex-data e)]
+             (error e "got exception")
              {:status (or status 500)
-              :body (generate-string {:status (.getMessage e)})})))))
+              :body (generate-string {:status (.getMessage e)
+                                      :data data})})))))
 
 (defn yield-cors-match
   [{:keys [origins] :or {origins []}}]
