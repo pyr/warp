@@ -8,6 +8,44 @@
 		<style type="text/css">
 .console {color: #fff; background-color: #000;}
 pre,code {font-family: Inconsolata, Menlo, Consolas, "Courier New", monospace;}
+pre .bold { font-weight: bold; }
+
+pre .black { color: rgb(0,0,0); }
+pre .red { color: rgb(187,0,0); }
+pre .green { color: rgb(0,187,0); }
+pre .yellow { color: rgb(187,187,0); }
+pre .blue { color: rgb(0,0,187); }
+pre .magenta { color: rgb(187,0,187); }
+pre .cyan { color: rgb(0,187,187); }
+pre .white { color: rgb(255,255,255); }
+
+pre .bright-black { color: rgb(85,85,85); }
+pre .bright-red { color: rgb(255,85,85); }
+pre .bright-green { color: rgb(0,255,0); }
+pre .bright-yellow { color: rgb(255,255,85); }
+pre .bright-blue { color: rgb(85,85,255); }
+pre .bright-magenta { color: rgb(255,85,255); }
+pre .bright-cyan { color: rgb(85,255,255); }
+pre .bright-white { color: rgb(255,255,255); }
+
+pre .background-black { background-color: rgb(0,0,0); }
+pre .background-red { background-color: rgb(187,0,0); }
+pre .background-green { background-color: rgb(0,187,0); }
+pre .background-yellow { background-color: rgb(187,187,0); }
+pre .background-blue { background-color: rgb(0,0,187); }
+pre .background-magenta { background-color: rgb(187,0,187); }
+pre .background-cyan { background-color: rgb(0,187,187); }
+pre .background-white { background-color: rgb(255,255,255); }
+
+pre .background-bright-black { background-color: rgb(85,85,85); }
+pre .background-bright-red { background-color: rgb(255,85,85); }
+pre .background-bright-green { background-color: rgb(0,255,0); }
+pre .background-bright-yellow { background-color: rgb(255,255,85); }
+pre .background-bright-blue { background-color: rgb(85,85,255); }
+pre .background-bright-magenta { background-color: rgb(255,85,255); }
+pre .background-bright-cyan { background-color: rgb(85,255,255); }
+pre .background-bright-white { background-color: rgb(255,255,255); }
+
 		</style>
 	</head>
 	<body>
@@ -16,7 +54,6 @@ pre,code {font-family: Inconsolata, Menlo, Consolas, "Courier New", monospace;}
 			<div id="app"></div>
 		</div>
 		<script src="vendor/react/react-0.11.1.js"></script>
-		<script src="vendor/ansi_up.js"></script>
 		<script src="fleet/goog/base.js" type="text/javascript"></script>
 		<script src="fleet/app.js" type="text/javascript"></script>
 		<script type="text/javascript">goog.require("org.spootnik.om_fleet.app");</script>

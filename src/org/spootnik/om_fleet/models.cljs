@@ -2,7 +2,8 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [ajax.core                   :refer [GET POST PUT DELETE]]
             [cljs.core.async             :refer [chan <! >! pub sub put! close!]]
-            [org.spootnik.om-fleet.utils :refer [pretty-match redirect]]))
+            [org.spootnik.om-fleet.utils :refer [pretty-match redirect]]
+            [org.spootnik.om-fleet.ansi  :refer [highlight]]))
 
 (def base-url "")
 
@@ -16,16 +17,11 @@
   [value]
   (assoc value "match" (pretty-match (value "match"))))
 
-(defn ansi
-  [value]
-  (when-not (nil? value)
-    (js/ansi_up.ansi_to_html (js/ansi_up.escape_for_html value))))
-
 (defn ansi-colors
   [[hostname data]]
   [hostname (map (fn [d] (-> d
-                             (assoc "stderr" (ansi (d "stderr")))
-                             (assoc "stdout" (ansi (d "stdout"))))) data)])
+                             (assoc "stderr" (highlight (d "stderr")))
+                             (assoc "stdout" (highlight (d "stdout"))))) data)])
 
 (defn add-scripts
   [scripts [host steps]]
@@ -124,8 +120,8 @@
                           (swap! app assoc-in [:history script_name :done] true)))))
                   (let [host (get-in event ["msg" "host"])
                         output (get-in event ["msg" "output"])
-                        output (assoc output "stdout" (ansi (output "stdout")))
-                        output (assoc output "stderr" (ansi (output "stderr")))]
+                        output (assoc output "stdout" (highlight (output "stdout")))
+                        output (assoc output "stderr" (highlight (output "stderr")))]
                     (swap! app update-in
                            [:history script_name "hosts" host] (comp vec conj) output))
                   (let [hosts (get-in @app [:history script_name "hosts"])]
@@ -147,7 +143,7 @@
     (sub ps resource channel)
     
     (go (loop [msg (<! channel)]
-          (js/console.log "resource msg" (pr-str msg))
+          (js/console.log "resource msg"  (pr-str msg))
           (case (:action msg) 
             :refresh (refresh handler)
             :get (fetch handler (:id msg))
