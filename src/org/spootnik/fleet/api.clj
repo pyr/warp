@@ -44,7 +44,8 @@
     (let [has-key? (or (some-> match keys set)
                      (constantly false))]
       (cond
-       (has-key? :not)  {:not (prepare-match (:not match) args)}
+       (nil? match)     match
+       (has-key? :not)  {:not (prepare-match args (:not match))}
        (has-key? :fact) {:fact (:fact match)
                          :value (interpol (:value match) args required-arg)}
        (has-key? :or)   {:or (map (partial prepare-match args)
@@ -62,7 +63,7 @@
   (let [{:keys [script match] :as scenario}
         (merge scenario (get-in scenario [:profiles profile]))]
     (assoc scenario
-      :match  (prepare-match match matchargs)
+      :match  (prepare-match matchargs match)
       :script (map (partial prepare-command args) script))))
 
 (defprotocol ScenarioStore

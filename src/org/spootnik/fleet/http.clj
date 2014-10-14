@@ -98,7 +98,7 @@
     (try (handler request)
          (catch Exception e
            (let [{:keys [type status] :as data} (ex-data e)]
-             (when (nil? data) (error e "unhandled exception"))
+             (error e "got exception")
              {:status (or status 500)
               :body (generate-string {:status (.getMessage e)
                                       :data data})})))))
