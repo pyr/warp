@@ -52,6 +52,7 @@
 
      (GET "/scenarios/:script_name/executions" request
           (let [script_name (-> request :params :script_name)
+                stream      (not= "false" (get-in request [:params :stream] "true"))
                 args        (if-let [args (-> request :params :args)]
                               (if (sequential? args) args [args])
                               [])
@@ -70,13 +71,15 @@
                 headers     (if valid-cors
                               (merge (cors-hdrs (request :headers)) headers)
                               headers)]
+
             (future
               (try
                 (doseq [msg (repeatedly #(<!! ch))
                         :while msg
                         :when msg]
                   (history/update script_name msg)
-                  (put! resp (format "data: %s\n\n" (generate-string msg)))
+                  (when stream
+                    (put! resp (format "data: %s\n\n" (generate-string msg))))
                   (put! publisher (merge {:topic :events} msg)))
                 (catch Exception e
                   (error e "cannot handle incoming message"))
@@ -85,12 +88,15 @@
 
             (infof "sending request for %s [profile:%s] [matchargs:%s] [args:%s]"
                    scenario profile matchargs args)
-            (engine/request engine
-                            (api/prepare scenario profile matchargs args)
-                            ch)
-            {:status 200
-             :headers headers
-             :body resp}))
+            (let [data (engine/request
+                         engine
+                         (api/prepare scenario profile matchargs args)
+                         ch)]
+              (if stream
+                {:status 200
+                 :headers headers
+                 :body resp}
+                (json-response data)))))
 
      (GET "/events" request
           (let [channel    (chan 10)
