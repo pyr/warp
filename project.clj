@@ -22,7 +22,7 @@
                  [org.clojure/data.codec        "0.1.0"]
                  [clj-yaml                      "0.4.0"]
                  [compojure                     "1.2.0"]
-                 [http-kit                      "2.1.19"]
+                 [cc.qbits/jet                  "0.5.0-alpha3"]
                  [ring/ring-json                "0.3.1"]
                  [redis.clients/jedis           "2.6.0"]
                  [org.bouncycastle/bcprov-jdk16 "1.46"]

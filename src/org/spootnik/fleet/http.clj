@@ -6,13 +6,13 @@
             [cheshire.core                  :refer [generate-string]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.middleware.params         :refer [wrap-params]]
+            [clojure.core.async             :refer [put! close! chan <!!]]
             [ring.middleware.json           :as json]
             [compojure.route                :as route]
-            [clojure.core.async             :as async]
             [org.spootnik.fleet.api         :as api]
             [org.spootnik.fleet.engine      :as engine]
             [org.spootnik.fleet.history     :as history]
-            [org.httpkit.server             :as http]
+            [qbits.jet.server               :as http]
             [ring.middleware.cors           :refer [wrap-cors cors-hdrs]]))
 
 (defn json-response
@@ -54,7 +54,8 @@
                               [])
                 scenario    (api/get! scenarios script_name)
                 profile     (-> request :params :profile keyword)
-                ch          (async/chan 10)
+                ch          (chan 10)
+                resp        (chan 10)
                 headers     {"Content-Type" "text/event-stream"
                              "X-Accel-Buffering" "no"
                              "Cache-Control" "no-cache"}
@@ -63,28 +64,26 @@
                 headers     (if valid-cors
                               (merge (cors-hdrs (request :headers)) headers)
                               headers)]
-            (http/with-channel request hchan
-              (future
-                (try
-                  (doseq [msg (repeatedly #(async/<!! ch))
-                          :while msg
-                          :when msg]
-                    (history/update script_name msg)
-                    (http/send! hchan
-                                {:status 200
-                                 :headers headers
-                                 :body (format "data: %s\n\n"
-                                               (generate-string msg))}
-                                false))
-                  (http/close hchan)
-                  (catch Exception e
-                    (error e "cannot handle incoming message"))))
+            (future
+              (try
+                (doseq [msg (repeatedly #(<!! ch))
+                        :while msg
+                        :when msg]
+                  (history/update script_name msg)
+                  (put! resp (format "data: %s\n\n" (generate-string msg))))
+                (catch Exception e
+                  (error e "cannot handle incoming message"))
+                (finally
+                  (close! resp))))
 
-              (infof "sending request for %s [profile:%s] [matchargs:%s] [args:%s]"
-                    scenario profile matchargs args)
-              (engine/request engine
-                              (api/prepare scenario profile matchargs args)
-                              ch))))
+            (infof "sending request for %s [profile:%s] [matchargs:%s] [args:%s]"
+                   scenario profile matchargs args)
+            (engine/request engine
+                            (api/prepare scenario profile matchargs args)
+                            ch)
+            {:status 200
+             :headers headers
+             :body resp}))
 
      ;; defaults
      (GET "/" []      (redirect "/index.html"))
@@ -112,10 +111,10 @@
 (defn start-http
   [scenarios engine opts]
   (api/load! scenarios)
-  (http/run-server (-> (api-routes scenarios engine opts)
-                       (wrap-error)
-                       (wrap-keyword-params)
-                       (wrap-params)
-                       (wrap-cors (yield-cors-match opts))
-                       (json/wrap-json-body {:keywords? true}))
-                   opts))
+  (let [handler (-> (api-routes scenarios engine opts)
+                    (wrap-error)
+                    (wrap-keyword-params)
+                    (wrap-params)
+                    (wrap-cors (yield-cors-match opts))
+                    (json/wrap-json-body {:keywords? true}))]
+    (http/run-jetty (merge opts {:ring-handler handler}))))
