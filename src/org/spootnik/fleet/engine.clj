@@ -86,8 +86,9 @@
                  (loop [payload (<! resps)
                         need    need]
                    (when (and (pos? need) payload)
-                     (>! sink payload)
+                     (>! sink (assoc payload :id id))
                      (recur (<! resps)
                             (if (finished? payload) (dec need) need)))))
-               (>! sink {:type :stop})
-               (a/close! sink))))))))
+               (>! sink {:type :stop :id id})
+               (a/close! sink)))
+          {:id id})))))
