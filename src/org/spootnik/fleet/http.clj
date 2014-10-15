@@ -80,7 +80,7 @@
                   (history/update script_name msg)
                   (when stream
                     (put! resp (format "data: %s\n\n" (generate-string msg))))
-                  (put! publisher (merge {:topic :events} msg)))
+                  (put! publisher (assoc msg :topic :events)))
                 (catch Exception e
                   (error e "cannot handle incoming message"))
                 (finally
