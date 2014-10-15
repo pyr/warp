@@ -6,7 +6,7 @@
             [cheshire.core                  :refer [generate-string]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.middleware.params         :refer [wrap-params]]
-            [clojure.core.async             :refer [put! close! chan <!!]]
+            [clojure.core.async             :refer [put! close! chan <!! alts!! timeout pub sub]]
             [ring.middleware.json           :as json]
             [compojure.route                :as route]
             [org.spootnik.fleet.api         :as api]
@@ -21,10 +21,16 @@
    :headers {"Content-Type" "application/json"}
    :body (generate-string body)})
 
+(defn yield-msg
+  [chan]
+  (alts!! [chan (timeout 15000)]))
+
 (defn api-routes
   [scenarios engine {:keys [origins] :or {origins []}}]
 
-  (let [patterns (mapv re-pattern origins)]
+  (let [patterns    (mapv re-pattern origins)
+        publisher   (chan)
+        publication (pub publisher #(:topic %))]
     (routes
      (GET "/scenarios" []
           (json-response (api/all! scenarios)))
@@ -70,7 +76,8 @@
                         :while msg
                         :when msg]
                   (history/update script_name msg)
-                  (put! resp (format "data: %s\n\n" (generate-string msg))))
+                  (put! resp (format "data: %s\n\n" (generate-string msg)))
+                  (put! publisher (merge {:topic :events} msg)))
                 (catch Exception e
                   (error e "cannot handle incoming message"))
                 (finally
@@ -81,6 +88,37 @@
             (engine/request engine
                             (api/prepare scenario profile matchargs args)
                             ch)
+            {:status 200
+             :headers headers
+             :body resp}))
+
+     (GET "/events" request
+          (let [channel    (chan 10)
+                resp       (chan 10)
+                headers    {"Content-Type" "text/event-stream"
+                            "X-Accel-Buffering" "no"
+                            "Cache-Control" "no-cache"}
+                origin     (get-in request [:headers "origin"])
+                valid-cors (and origin (some #(re-find % origin) patterns))
+                headers    (if valid-cors
+                             (merge (cors-hdrs (request :headers)) headers)
+                             headers)]
+
+            (sub publication :events channel)
+
+            (future
+              (try
+                (doseq [[msg source] (repeatedly #(yield-msg channel))
+                        :while (or (not= channel source) msg)
+                        :let [msg (or msg {:type "keepalive"})
+                              msg (dissoc msg "topic")
+                              data (format "data: %s\n\n" (generate-string msg))]]
+                  (put! resp data))
+                (catch Exception e
+                  (error e "cannot handle incoming message"))
+                (finally
+                  (close! resp))))
+
             {:status 200
              :headers headers
              :body resp}))
