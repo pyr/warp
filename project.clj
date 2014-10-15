@@ -25,17 +25,9 @@
                  [http-kit                      "2.1.19"]
                  [ring/ring-json                "0.3.1"]
                  [redis.clients/jedis           "2.6.0"]
-                 [org.slf4j/slf4j-log4j12       "1.7.7"]
-                 [log4j/apache-log4j-extras     "1.2.17"]
-                 [commons-logging               "1.2"]
-                 [net.logstash.log4j/jsonevent-layout "1.7"]
                  [org.bouncycastle/bcprov-jdk16 "1.46"]
-                 [log4j/log4j                   "1.2.17"
-                  :exclusions [javax.mail/mail
-                               javax.jms/jms
-                               com.sun.jdmk/jmxtools
-                               com.sun.jmx/jmxri]]
                  [jumblerg/ring.middleware.cors "1.0.1"]
+                 [org.spootnik/logconfig        "0.7.1"]
 
                  [org.clojure/clojurescript     "0.0-2356"]
                  [om                            "0.7.1"]

@@ -3,7 +3,7 @@
 
 (def default-logging
   "Logging can be bypassed if a log4j configuration is provided to the underlying JVM"
-  {:use "org.spootnik.fleet.logging/start-logging"
+  {:use "org.spootnik.logconfig/start-logging!"
    :pattern "%p [%d] %t - %c - %m%n"
    :external false
    :console true
