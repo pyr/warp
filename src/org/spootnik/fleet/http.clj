@@ -92,6 +92,10 @@
                          engine
                          (api/prepare scenario profile matchargs args)
                          ch)]
+              (put! publisher (assoc data
+                                     :topic :events
+                                     :type :start
+                                     :scenario script_name))
               (if stream
                 {:status 200
                  :headers headers
@@ -117,7 +121,7 @@
                 (doseq [[msg source] (repeatedly #(yield-msg channel))
                         :while (or (not= channel source) msg)
                         :let [msg (or msg {:type "keepalive"})
-                              msg (dissoc msg "topic")
+                              msg (dissoc msg "topic" :topic)
                               data (format "data: %s\n\n" (generate-string msg))]]
                   (put! resp data))
                 (catch Exception e
