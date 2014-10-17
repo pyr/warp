@@ -63,7 +63,7 @@ module.exports = (robot) ->
       args.push('matchargs=' + encodeURIComponent(arg)) for arg in msg.match[5].split(" ")
 
     if msg.match[7]
-      args.push('matchargs=' + encodeURIComponent(arg)) for arg in msg.match[7].split(" ")
+      args.push('args=' + encodeURIComponent(arg)) for arg in msg.match[7].split(" ")
 
     fleet = new Fleet(scenario, msg)
     url = fleet_url + "/scenarios/" + scenario + "/executions"
