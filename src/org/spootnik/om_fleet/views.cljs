@@ -135,7 +135,8 @@
         (string? script) (when (not= script "ping") (dom/code nil script))
         (script "service") (script "service")
         (script "sleep") (script "sleep")
-        (script "shell") (dom/code nil (script "shell"))))))
+        (script "shell") (dom/code nil (first (clojure.string/split-lines
+                                               (script "shell"))))))))
 
 (defcomponent scenario-history
   [history owner]
@@ -259,7 +260,9 @@
                                            (script "action") " "))
 
         (and (map? script) (script "shell"))
-        (dom/span nil "Script " (dom/code nil (script "shell") " "))
+        (dom/span nil "Script " (dom/code nil (first
+                                               (clojure.string/split-lines
+                                                (script "shell"))) " "))
 
         :else
         (dom/span nil "Script " (dom/code nil script) " "))
