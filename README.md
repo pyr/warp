@@ -3,6 +3,9 @@ warp: distributed workflow management
 
 warp distributes scenarios across any number of machines.
 
+> hubot: deploy to production, engage!
+
+![build status](https://travis-ci.org/pyr/warp.svg)
 ### The story
 
 Your applications span a large group of hosts and deployment
@@ -65,8 +68,6 @@ profiles:
 
 ![warp index](http://i.imgur.com/qawWTTX.png)
 ![warp output](http://i.imgur.com/sYVRCHf.png)
-
-
 
 ### Pub-Sub support
 
