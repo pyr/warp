@@ -1,7 +1,9 @@
 (ns org.spootnik.fleet.history
-  (:require [org.spootnik.fleet.api :as api]))
+  (:require [org.spootnik.fleet.api :as api]
+            [clojure.tools.logging  :refer [info]]))
 
-(def history (atom {}))
+(def done (atom {}))
+(def in-progress (atom {}))
 
 (def defaults
   {:hosts {}
@@ -12,9 +14,10 @@
 (defn fetch
   [store script_name]
   (let [scenario (api/get! store script_name)]
-    (assoc (get @history script_name defaults)
-      :script_name script_name
-      :script (-> scenario :script))))
+    {:done (get @done script_name [])
+     :in-progress (get @in-progress script_name {})
+     :script_name script_name
+     :script (-> scenario :script)}))
 
 (defn process
   [payload {:keys [msg type]}]
@@ -41,5 +44,18 @@
                    (update-in [:total_done] inc)))))))
 
 (defn update
-  [script_name msg]
-  (swap! history update-in [script_name] process msg))
+  [script_name {:keys [type] :as msg}]
+  (info "update" script_name type msg)
+  (if (= type :stop)
+    (let [id (:id msg)
+          completed (get-in @in-progress [script_name id])]
+      (info "completed" completed)
+      (when completed
+        (swap! done update-in [script_name]
+               (comp (partial take 5) conj)
+               completed))
+      (swap! in-progress update-in [script_name] dissoc id)
+      (info "in-progress" @in-progress))
+    (do
+      (swap! in-progress update-in [script_name (get-in msg [:msg :id])] process msg)
+      (info "progress" @in-progress))))

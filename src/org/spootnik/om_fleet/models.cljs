@@ -9,9 +9,11 @@
 
 (defprotocol Resource
   (resource [this])
+  (history [this])
   (refresh [this])
   (fetch [this id])
-  (execute [this script profile]))
+  (execute [this script profile])
+  (stream [this]))
 
 (defn replace-match
   [value]
@@ -32,12 +34,22 @@
       [host steps]))
 
 (defn event-source [url]
+  (js/console.log "making event source to" (pr-str url))
   (let [source (new js/EventSource url)
         channel (chan)]
     (.addEventListener source "message"
                        (fn [e] (put! channel (js->clj (js/JSON.parse (.-data e))))))
+    (.addEventListener source "error"
+                       (fn [e]
+                         (js/console.log (pr-str e))))
     {:source source
      :channel channel}))
+
+(defn transform-host
+  [scripts {:strs [hosts] :as result}]
+  (assoc result "hostsv"
+         (->> (mapv ansi-colors hosts)
+              (mapv (partial add-scripts scripts)))))
 
 (defn Scenarios
   [app]
@@ -65,6 +77,11 @@
                                    (->> response
                                         (seq)
                                         (sort-by #(first %))))))}))
+    (history [this]
+      (GET (str base-url "/history")
+           {:handler (fn [response]
+                       (swap! app assoc :done (response "done"))
+                       (swap! app assoc :in-progress (response "in-progress")))}))
     (fetch [this scenario]
       (GET (str base-url "/scenarios/" scenario)
            {:handler (fn [response]
@@ -80,12 +97,15 @@
                                   )))})
       (GET (str base-url "/scenarios/" scenario "/history")
            {:handler (fn [response]
-                       (let [hosts (response "hosts")
-                             scripts (response "script")]
-                         (swap! app assoc-in [:history scenario]
-                                (assoc response "hostsv"
-                                       (->> (mapv ansi-colors hosts)
-                                            (mapv (partial add-scripts scripts)))))))}))
+                       (let [scripts (response "script")
+                             done (map (partial transform-host scripts) (response "done"))
+
+                             in-progress (map (fn [[k v]] [k (transform-host scripts v)]) (seq (response "in-progress")))
+                             in-progress (into {} in-progress)
+                             response (assoc response
+                                             "done" done
+                                             "in-progress" in-progress)]
+                         (swap! app assoc-in [:history scenario] response)))}))
     (execute [this {:strs [script_name script] :as scenario} profile]
       (swap! app assoc-in [:history script_name] {:done false
                                                   "id" ""
@@ -97,53 +117,63 @@
                                                   "total_done" 0})
       (swap! app assoc :scenario scenario)
       (redirect (:h @app) (str "/scenarios/" script_name))
-      (let [url (str base-url "/scenarios/" script_name "/executions")
-            url (if (= profile :default) url (str url "?profile=" (name profile)))
+      (GET (str base-url "/scenarios/" script_name "/executions?stream=false"))
+      ;(let [url (str base-url "/scenarios/" script_name "/executions")
+      ;      url (if (= profile :default) url (str url "?profile=" (name profile)))
+      ;      {:keys [source channel]} (event-source url)]
+      ;  (go (loop [{:strs [type] :as event} (<! channel)]
+      ;        (condp = type
+      ;          "ack"
+      ;          (do
+      ;            (swap! app update-in [:history script_name "total_acks"] inc)
+      ;            (when (= (get-in event ["msg" "status"]) "starting")
+      ;              (swap! app update-in [:history script_name "starting_hosts"] inc)))
+
+      ;          "resp"
+      ;          (do
+      ;            (let [status (get-in event ["msg" "output" "status"])]
+      ;              (when (or (= status "finished")
+      ;                        (= status "failure"))
+      ;                (do
+      ;                  (swap! app update-in [:history script_name "total_done"] inc)
+      ;                  (if (>= (get-in app [:history script_name "total_done"])
+      ;                          (get-in app [:history script_name "starting_hosts"]))
+      ;                    (swap! app assoc-in [:history script_name :done] true)))))
+      ;            (let [host (get-in event ["msg" "host"])
+      ;                  output (get-in event ["msg" "output"])
+      ;                  output (assoc output "stdout" (highlight (output "stdout")))
+      ;                  output (assoc output "stderr" (highlight (output "stderr")))]
+      ;              (swap! app update-in
+      ;                     [:history script_name "hosts" host] (comp vec conj) output))
+      ;            (let [hosts (get-in @app [:history script_name "hosts"])]
+      ;              (swap! app assoc-in [:history script_name "hostsv"]
+      ;                     (map (partial add-scripts (scenario "script")) hosts))))
+
+      ;          "stop"
+      ;          (do
+      ;            (.close source)
+      ;            (close! channel)))
+
+      ;        (if-not (= "stop" type)
+      ;          (recur (<! channel))))))
+      )
+    (stream [this]
+      (let [url (str base-url "/events")
             {:keys [source channel]} (event-source url)]
-        (go (loop [{:strs [type] :as event} (<! channel)]
-              (condp = type
-                "ack"
-                (do
-                  (swap! app update-in [:history script_name "total_acks"] inc)
-                  (when (= (get-in event ["msg" "status"]) "starting")
-                    (swap! app update-in [:history script_name "starting_hosts"] inc)))
-
-                "resp"
-                (do
-                  (let [status (get-in event ["msg" "output" "status"])]
-                    (when (or (= status "finished")
-                              (= status "failure"))
-                      (do
-                        (swap! app update-in [:history script_name "total_done"] inc)
-                        (if (>= (get-in app [:history script_name "total_done"])
-                                (get-in app [:history script_name "starting_hosts"]))
-                          (swap! app assoc-in [:history script_name :done] true)))))
-                  (let [host (get-in event ["msg" "host"])
-                        output (get-in event ["msg" "output"])
-                        output (assoc output "stdout" (highlight (output "stdout")))
-                        output (assoc output "stderr" (highlight (output "stderr")))]
-                    (swap! app update-in
-                           [:history script_name "hosts" host] (comp vec conj) output))
-                  (let [hosts (get-in @app [:history script_name "hosts"])]
-                    (swap! app assoc-in [:history script_name "hostsv"]
-                           (map (partial add-scripts (scenario "script")) hosts))))
-
-                "stop"
-                (do
-                  (.close source)
-                  (close! channel)))
-
-              (if-not (= "stop" type)
-                (recur (<! channel)))))))))
+        (go (loop [{:strs [type id] :as event} (<! channel)]
+              (js/console.log (pr-str event))
+              (recur (<! channel))))))))
 
 (defn listen
   [ps handler]
   (let [channel (chan)
         resource (resource handler)]
     (sub ps resource channel)
+    (stream handler)
+    (history handler)
     
     (go (loop [msg (<! channel)]
-          (js/console.log "resource msg"  (pr-str msg))
+          (js/console.log "resource msg" (pr-str msg))
           (case (:action msg) 
             :refresh (refresh handler)
             :get (fetch handler (:id msg))
