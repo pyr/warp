@@ -50,29 +50,33 @@ module.exports = (robot) ->
 
   warp_url = process.env.HUBOT_WARP_URL
 
-  robot.respond /(warp me|engage!) (\S+)( to (\S+)( (\S+))?)?( with (.*))?$/i, (msg) ->
+  response = (msg) ->
 
-    scenario = msg.match[2]
+    scenario = msg.match[1]
       .split(/\ +/)
       .filter((a) -> a)
       .join("-")
     args = []
+    if msg.match[2]
+      args.push('profile=' + encodeURIComponent(msg.match[2]))
+
+    if msg.match[3]
+      args.push('matchargs=' + encodeURIComponent(arg)) for arg in msg.match[3].split(" ")
+
     if msg.match[4]
-      args.push('profile=' + encodeURIComponent(msg.match[4]))
-
-    if msg.match[6]
-      args.push('matchargs=' + encodeURIComponent(arg)) for arg in msg.match[6].split(" ")
-
-    if msg.match[8]
-      args.push('args=' + encodeURIComponent(arg)) for arg in msg.match[8].split(" ")
+      args.push('args=' + encodeURIComponent(arg)) for arg in msg.match[4].split(" ")
 
     warp = new Warp(scenario, msg)
     url = warp_url + "/scenarios/" + scenario + "/executions"
     if args.length > 0
       url += '?' + args.join("&")
+    console.log url
 
     es = new EventSource(url)
     es.onmessage = (e) ->
       warp.process JSON.parse(e.data)
     es.onerror = ->
       es.close()
+
+  robot.respond /(?:warp me|engage!) (\S+)(?: to (\S+)(?: (\S+))?)?(?: with (.*))?$/i, response
+  robot.respond /(\S+)(?: to (\S+)(?: (\S+))?)?(?: with (.*))?[,\.] [eE]ngage!$/i, response
