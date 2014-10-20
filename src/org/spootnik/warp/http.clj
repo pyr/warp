@@ -1,4 +1,4 @@
-(ns org.spootnik.fleet.http
+(ns org.spootnik.warp.http
   (:require [compojure.core                 :refer [routes GET POST PUT DELETE]]
             [clojure.tools.logging          :refer [error infof]]
             [clojure.pprint                 :refer [pprint]]
@@ -9,9 +9,9 @@
             [clojure.core.async             :refer [put! close! chan <!! alts!! timeout pub sub]]
             [ring.middleware.json           :as json]
             [compojure.route                :as route]
-            [org.spootnik.fleet.api         :as api]
-            [org.spootnik.fleet.engine      :as engine]
-            [org.spootnik.fleet.history     :as history]
+            [org.spootnik.warp.api          :as api]
+            [org.spootnik.warp.engine       :as engine]
+            [org.spootnik.warp.history      :as history]
             [qbits.jet.server               :as http]
             [ring.middleware.cors           :refer [wrap-cors cors-hdrs]]))
 

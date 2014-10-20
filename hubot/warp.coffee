@@ -1,24 +1,25 @@
 # Description:
-#   Interacts with fleet: the parallel execution commander
+#   Interacts with warp: the parallel execution commander
 #
 # Commands:
-#   hubot fleet me <scenario> - Schedules scenario for execution by fleet
+#   hubot warp me <scenario> - Schedules scenario for execution by warp
+#   hubot engage! <scenario> - Schedules scenario for execution by warp
 #
 # Configuration:
-#   HUBOT_FLEET_URL - contains fleet url
-#   HUBOT_FLEET_SHOW_URL - if necessary, a different url for display purposes
+#   HUBOT_WARP_URL - contains warp url
+#   HUBOT_WARP_SHOW_URL - if necessary, a different url for display purposes
 #
 
 EventSource = require 'eventsource'
 
-class Fleet
+class Warp
   acks: 0
   ack_starting: 0
   acks_done: false
   done: 0
 
   constructor: (@scenario, @client) ->
-    history = (process.env.HUBOT_FLEET_SHOW_URL or process.env.HUBOT_FLEET_URL) + '#/scenarios/' + @scenario
+    history = (process.env.HUBOT_WARP_SHOW_URL or process.env.HUBOT_WARP_URL) + '#/scenarios/' + @scenario
     @client.send "executing " + scenario + ", waiting 2 seconds for acks, reporting to: " + history
 
   process: (msg) ->
@@ -47,31 +48,31 @@ class Fleet
 
 module.exports = (robot) ->
 
-  fleet_url = process.env.HUBOT_FLEET_URL
+  warp_url = process.env.HUBOT_WARP_URL
 
-  robot.respond /fleet me (\S+)( to (\S+)( (\S+))?)?( with (.*))?$/i, (msg) ->
+  robot.respond /(warp me|engage!) (\S+)( to (\S+)( (\S+))?)?( with (.*))?$/i, (msg) ->
 
-    scenario = msg.match[1]
+    scenario = msg.match[2]
       .split(/\ +/)
       .filter((a) -> a)
       .join("-")
     args = []
-    if msg.match[3]
+    if msg.match[4]
       args.push('profile=' + encodeURIComponent(msg.match[3]))
 
-    if msg.match[5]
+    if msg.match[6]
       args.push('matchargs=' + encodeURIComponent(arg)) for arg in msg.match[5].split(" ")
 
-    if msg.match[7]
+    if msg.match[8]
       args.push('args=' + encodeURIComponent(arg)) for arg in msg.match[7].split(" ")
 
-    fleet = new Fleet(scenario, msg)
-    url = fleet_url + "/scenarios/" + scenario + "/executions"
+    warp = new Warp(scenario, msg)
+    url = warp_url + "/scenarios/" + scenario + "/executions"
     if args.length > 0
       url += '?' + args.join("&")
 
     es = new EventSource(url)
     es.onmessage = (e) ->
-      fleet.process JSON.parse(e.data)
+      warp.process JSON.parse(e.data)
     es.onerror = ->
       es.close()

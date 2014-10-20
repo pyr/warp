@@ -1,7 +1,7 @@
-(ns org.spootnik.fleet.engine
-  (:require [clojure.core.async           :refer [chan >! <! alts! go] :as a]
-            [clojure.tools.logging        :refer [info error]]
-            [org.spootnik.fleet.transport :as transport]))
+(ns org.spootnik.warp.engine
+  (:require [clojure.core.async          :refer [chan >! <! alts! go] :as a]
+            [clojure.tools.logging       :refer [info error]]
+            [org.spootnik.warp.transport :as transport]))
 
 (def ack-timeout 2000)
 
@@ -30,7 +30,7 @@
 
 (defn chan-names
   [id]
-  [(str "fleetreq:" id) (str "fleet:ack:" id) (str "fleet:res:" id)])
+  [(str "warpreq:" id) (str "warp:ack:" id) (str "warp:res:" id)])
 
 (defn reactor
   [keepalive]

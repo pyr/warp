@@ -1,11 +1,11 @@
-(ns org.spootnik.om-fleet.app
+(ns org.spootnik.om-warp.app
   (:require [om.core :as om :include-macros true]
             [om-tools.core :refer-macros [defcomponent]]
             [cljs.core.async :refer [chan]]
             [ajax.core :refer [GET]]
-            [org.spootnik.om-fleet.views :as views]
-            [org.spootnik.om-fleet.router :as router]
-            [org.spootnik.om-fleet.models :as models]))
+            [org.spootnik.om-warp.views :as views]
+            [org.spootnik.om-warp.router :as router]
+            [org.spootnik.om-warp.models :as models]))
 
 (enable-console-print!)
 

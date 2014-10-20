@@ -1,4 +1,4 @@
-(ns org.spootnik.om-fleet.views
+(ns org.spootnik.om-warp.views
   (:require [om.core :as om :include-macros true]
             [cljs.core.async :refer [chan <! >! put!]]
             [ajax.core :refer [GET POST PUT ajax-request]]
@@ -8,7 +8,7 @@
             [om-bootstrap.panel :as p]
             [om-bootstrap.button :as b]
             [om-bootstrap.random :as r]
-            [org.spootnik.om-fleet.utils :refer [redirect]]
+            [org.spootnik.om-warp.utils :refer [redirect]]
             ))
 
 (defn state-from-event
@@ -21,7 +21,7 @@
   [app owner]
   (render
     [this]
-    (n/navbar {:brand "Fleet" :static-top? true}
+    (n/navbar {:brand "Warp!" :static-top? true}
               (n/nav
                 {:active-key (get-in app [:router :tab])}
                 (n/nav-item {:href "#/scenarios" :key :scenarios} "Scenarios")))))
@@ -165,7 +165,7 @@
         (cond
           (= step "ping")
           (dom/p nil (r/label {:bs-style "primary"} "ping"))
-          
+
           :else
           (dom/pre {:class "console"} step))
 
@@ -285,7 +285,7 @@
       (when-not (get-in app [:history scenario])
         (do
           (put! chan {:resource :scenarios :action :get :id scenario})))))
-  
+
   (render
     [this]
     (let [scenario (get-in app [:router :route-params :scenario])

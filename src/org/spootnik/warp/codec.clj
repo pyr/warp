@@ -1,4 +1,4 @@
-(ns org.spootnik.fleet.codec
+(ns org.spootnik.warp.codec
   (:require [clojure.data.json :as json]))
 
 (defprotocol Codec

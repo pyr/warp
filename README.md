@@ -1,7 +1,7 @@
-fleet: distributed workflow management
-======================================
+warp: distributed workflow management
+=====================================
 
-fleet distributes scenarios across any number of machines.
+warp distributes scenarios across any number of machines.
 
 ### The story
 
@@ -17,9 +17,9 @@ that involves:
 This process is likely the same for several profiles such as
 *test*, *staging* and *production*.
 
-![fleet scenarios](http://i.imgur.com/6svdQH9.png)
+![warp scenarios](http://i.imgur.com/6svdQH9.png)
 
-fleet provides a DSL for writing scenarios and schedules
+warp provides a DSL for writing scenarios and schedules
 executions over a pub-sub system, streaming the results
 to the controller which makes results available through
 an API and web view
@@ -63,27 +63,27 @@ profiles:
 
 ## More screenshots
 
-![fleet index](http://i.imgur.com/qawWTTX.png)
-![fleet output](http://i.imgur.com/sYVRCHf.png)
+![warp index](http://i.imgur.com/qawWTTX.png)
+![warp output](http://i.imgur.com/sYVRCHf.png)
 
 
 
 ### Pub-Sub support
 
-Currently, fleet relies on the redis pub-sub functionnality
+Currently, warp relies on the redis pub-sub functionnality
 for execution. 
-fleet works hand in hand with any number of
-[fleet-agent's](https://github.com/pyr/fleet-agent), schedules
+warp works hand in hand with any number of
+[warp-agent's](https://github.com/pyr/warp-agent), schedules
 scenarios for execution.
 
 scenario creation an execution happens through an HTTP api,
 a command-line client is coming up.
 
-fleet and [fleet-agent](https://github.com/pyr/fleet-agent) borrow
+warp and [warp-agent](https://github.com/pyr/warp-agent) borrow
 from [mcollective](http://puppetlabs.com/mcollective) and my first
 implementation within [amiral](https://github.com/pyr/amiral)
 
-fleet aims to improve on amiral in the following ways:
+warp aims to improve on amiral in the following ways:
 
 - Bundle matchers, timeouts and a list of commands (a script) options
   in named "scenarios"
