@@ -33,6 +33,10 @@
         publisher   (chan)
         publication (pub publisher #(:topic %))]
     (routes
+     (GET "/history" []
+          (json-response {:done @history/done
+                          :in-progress @history/in-progress}))
+
      (GET "/scenarios" []
           (json-response (api/all! scenarios)))
 

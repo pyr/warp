@@ -8,8 +8,7 @@
             [om-bootstrap.panel :as p]
             [om-bootstrap.button :as b]
             [om-bootstrap.random :as r]
-            [org.spootnik.om-warp.utils :refer [redirect]]
-            ))
+            [org.spootnik.om-warp.utils :refer [redirect]]))
 
 (defn state-from-event
   [app k]

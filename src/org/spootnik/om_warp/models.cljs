@@ -92,9 +92,7 @@
                                     (sort-by #(first %)
                                              (map (fn [[n data]]
                                                     [n (replace-match data)])
-                                                  (seq (response "profiles")))))
-
-                                  )))})
+                                                  (seq (response "profiles"))))))))})
       (GET (str base-url "/scenarios/" scenario "/history")
            {:handler (fn [response]
                        (let [scripts (response "script")
@@ -161,7 +159,7 @@
       (let [url (str base-url "/events")
             {:keys [source channel]} (event-source url)]
         (go (loop [{:strs [type id] :as event} (<! channel)]
-              (js/console.log (pr-str event))
+              (js/console.log "stream" (pr-str event))
               (recur (<! channel))))))))
 
 (defn listen
@@ -177,8 +175,8 @@
           (case (:action msg) 
             :refresh (refresh handler)
             :get (fetch handler (:id msg))
-            :execute (execute handler (:script msg) (:profile msg))
-          (recur (<! channel)))))))
+            :execute (execute handler (:script msg) (:profile msg)))
+          (recur (<! channel))))))
 
 (defn start-sync!
   [app models]
