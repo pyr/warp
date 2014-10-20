@@ -58,13 +58,13 @@ module.exports = (robot) ->
       .join("-")
     args = []
     if msg.match[4]
-      args.push('profile=' + encodeURIComponent(msg.match[3]))
+      args.push('profile=' + encodeURIComponent(msg.match[4]))
 
     if msg.match[6]
-      args.push('matchargs=' + encodeURIComponent(arg)) for arg in msg.match[5].split(" ")
+      args.push('matchargs=' + encodeURIComponent(arg)) for arg in msg.match[6].split(" ")
 
     if msg.match[8]
-      args.push('args=' + encodeURIComponent(arg)) for arg in msg.match[7].split(" ")
+      args.push('args=' + encodeURIComponent(arg)) for arg in msg.match[8].split(" ")
 
     warp = new Warp(scenario, msg)
     url = warp_url + "/scenarios/" + scenario + "/executions"
