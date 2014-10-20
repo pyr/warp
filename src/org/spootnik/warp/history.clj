@@ -1,6 +1,6 @@
-(ns org.spootnik.fleet.history
-  (:require [org.spootnik.fleet.api :as api]
-            [clojure.tools.logging  :refer [info]]))
+(ns org.spootnik.warp.history
+  (:require [org.spootnik.warp.api :as api]
+            [clojure.tools.logging  :refer [info]]))  
 
 (def done (atom {}))
 (def in-progress (atom {}))

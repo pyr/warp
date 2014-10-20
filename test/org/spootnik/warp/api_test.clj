@@ -1,6 +1,6 @@
-(ns org.spootnik.fleet.api-test
-  (:require [org.spootnik.fleet.api :refer :all]
-            [clojure.test           :refer :all]))
+(ns org.spootnik.warp.api-test
+  (:require [org.spootnik.warp.api :refer :all]
+            [clojure.test          :refer :all]))
 
 (deftest match-test
   (testing "simple-match"

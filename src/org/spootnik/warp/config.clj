@@ -1,4 +1,4 @@
-(ns org.spootnik.fleet.config
+(ns org.spootnik.warp.config
   (:require [clj-yaml.core :as yaml]))
 
 (def default-logging
@@ -9,7 +9,7 @@
    :console true
    :files  []
    :level  "info"
-   :overrides {:org.spootnik.fleet "debug"}})
+   :overrides {:org.spootnik.warp "debug"}})
 
 (defn find-ns-var
   "Find a symbol in a namespace"

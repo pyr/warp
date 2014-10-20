@@ -1,4 +1,4 @@
-(ns org.spootnik.fleet.service)
+(ns org.spootnik.warp.service)
 
 (defprotocol Service
   (start! [this])

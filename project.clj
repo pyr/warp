@@ -1,17 +1,17 @@
-(defproject org.spootnik/fleet "0.5.0"
+(defproject org.spootnik/warp "0.5.0"
   :description "distributed command execution"
-  :url "https://github.com/pyr/fleet"
+  :url "https://github.com/pyr/warp"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :aot :all
-  :main org.spootnik.fleet
+  :main org.spootnik.warp
   :plugins [[lein-cljsbuild "1.0.4-20140402.162426-2"]]
   :cljsbuild {
-    :builds [{:id "om-fleet"
-              :source-paths ["src/org/spootnik/om_fleet"]
+    :builds [{:id "om-warp"
+              :source-paths ["src/org/spootnik/om_warp"]
               :compiler {
-                :output-to "resources/public/fleet/app.js"
-                :output-dir "resources/public/fleet"
+                :output-to "resources/public/warp/app.js"
+                :output-dir "resources/public/warp"
                 :optimizations :none
                 :source-map true}}]}
   :dependencies [[org.clojure/clojure           "1.6.0"]
@@ -27,7 +27,7 @@
                  [redis.clients/jedis           "2.6.0"]
                  [org.bouncycastle/bcprov-jdk16 "1.46"]
                  [jumblerg/ring.middleware.cors "1.0.1"]
-                 [org.spootnik/logconfig        "0.7.1"]
+                 [org.spootnik/logconfig        "0.7.2"]
 
                  [org.clojure/clojurescript     "0.0-2356"]
                  [om                            "0.7.1"]

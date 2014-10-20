@@ -1,11 +1,11 @@
-(ns org.spootnik.fleet.transport.redis
-  (:require [clojure.core.async           :refer [put! chan pub sub] :as a]
-            [clojure.string               :refer [split join]]
-            [clojure.tools.logging        :refer [warn]]
-            [org.spootnik.fleet.codec     :as codec]
-            [org.spootnik.fleet.transport :as transport]
-            [org.spootnik.fleet.security  :as security]
-            [org.spootnik.fleet.service   :as service]))
+(ns org.spootnik.warp.transport.redis
+  (:require [clojure.core.async          :refer [put! chan pub sub] :as a]
+            [clojure.string              :refer [split join]]
+            [clojure.tools.logging       :refer [warn]]
+            [org.spootnik.warp.codec     :as codec]
+            [org.spootnik.warp.transport :as transport]
+            [org.spootnik.warp.security  :as security]
+            [org.spootnik.warp.service   :as service]))
 
 (defn subscriber
   [ch codec signer]
@@ -58,7 +58,7 @@
   (let [ch   (chan (a/dropping-buffer inbuf))
         pool (rpool pool)
         pub  (pub ch get-chan)
-        ptrn "fleet:*"]
+        ptrn "warp:*"]
 
     (reify
       service/Service

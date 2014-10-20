@@ -1,10 +1,10 @@
-(ns org.spootnik.fleet
-  (:require [org.spootnik.fleet.config  :as config]
-            [org.spootnik.fleet.service :as service]
-            [org.spootnik.fleet.engine  :as engine]
-            [org.spootnik.fleet.http    :as http]
-            [clojure.tools.logging      :refer [info]]
-            [clojure.tools.cli          :refer [cli]])
+(ns org.spootnik.warp
+  (:require [org.spootnik.warp.config  :as config]
+            [org.spootnik.warp.service :as service]
+            [org.spootnik.warp.engine  :as engine]
+            [org.spootnik.warp.http    :as http]
+            [clojure.tools.logging     :refer [info]]
+            [clojure.tools.cli         :refer [cli]])
   (:gen-class))
 
 (defn get-cli
@@ -12,7 +12,7 @@
   (try
     (cli args
          ["-h" "--help" "Show help" :default false :flag true]
-         ["-f" "--path" "Configuration path" :default "/etc/fleet.yml"])
+         ["-f" "--path" "Configuration path" :default "/etc/warp.yml"])
     (catch Exception e
       (binding [*out* *err*]
         (println "Could not parse arguments: " (.getMessage e))

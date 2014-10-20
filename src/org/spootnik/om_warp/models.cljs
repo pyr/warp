@@ -1,9 +1,9 @@
-(ns org.spootnik.om-fleet.models
+(ns org.spootnik.om-warp.models
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [ajax.core                   :refer [GET POST PUT DELETE]]
-            [cljs.core.async             :refer [chan <! >! pub sub put! close!]]
-            [org.spootnik.om-fleet.utils :refer [pretty-match redirect]]
-            [org.spootnik.om-fleet.ansi  :refer [highlight]]))
+  (:require [ajax.core                  :refer [GET POST PUT DELETE]]
+            [cljs.core.async            :refer [chan <! >! pub sub put! close!]]
+            [org.spootnik.om-warp.utils :refer [pretty-match redirect]]
+            [org.spootnik.om-warp.ansi  :refer [highlight]]))
 
 (def base-url "")
 
@@ -93,7 +93,7 @@
                                              (map (fn [[n data]]
                                                     [n (replace-match data)])
                                                   (seq (response "profiles")))))
-                                  
+
                                   )))})
       (GET (str base-url "/scenarios/" scenario "/history")
            {:handler (fn [response]
@@ -177,8 +177,8 @@
           (case (:action msg) 
             :refresh (refresh handler)
             :get (fetch handler (:id msg))
-            :execute (execute handler (:script msg) (:profile msg)))
-          (recur (<! channel))))))
+            :execute (execute handler (:script msg) (:profile msg))
+          (recur (<! channel)))))))
 
 (defn start-sync!
   [app models]

@@ -1,4 +1,4 @@
-(ns org.spootnik.fleet.transport)
+(ns org.spootnik.warp.transport)
 
 (defprotocol Transport
   (publish [this chan msg])
