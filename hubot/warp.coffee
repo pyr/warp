@@ -80,3 +80,4 @@ module.exports = (robot) ->
 
   robot.respond /(?:warp me|engage!) (\S+)(?: to (\S+)(?: (\S+))?)?(?: with (.*))?$/i, response
   robot.respond /(\S+)(?: to (\S+)(?: (\S+))?)?(?: with (.*))?[,\.] [eE]ngage!$/i, response
+  robot.hear /(\S+)(?: to (\S+)(?: (\S+))?)?(?: with (.*))?[,\.] [eE]ngage!$/i, response
