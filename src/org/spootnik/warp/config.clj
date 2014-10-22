@@ -1,15 +1,25 @@
 (ns org.spootnik.warp.config
-  (:require [clj-yaml.core :as yaml]))
+  (:require [clj-yaml.core          :as yaml]
+            [org.spootnik.logconfig :refer [start-logging!]]))
 
-(def default-logging
-  "Logging can be bypassed if a log4j configuration is provided to the underlying JVM"
-  {:use "org.spootnik.logconfig/start-logging!"
-   :pattern "%p [%d] %t - %c - %m%n"
-   :external false
-   :console true
-   :files  []
-   :level  "info"
-   :overrides {:org.spootnik.warp "debug"}})
+(defn defaults
+  [key config]
+  (let [defaults {:logging
+                  {:pattern "%p [%d] %t - %c - %m%n"
+                   :external false
+                   :console true
+                   :files  []
+                   :level  "info"
+                   :overrides {:org.spootnik.warp "debug"}}
+                  :codec
+                  {:use "org.spootnik.warp.codec/json-codec"}
+                  :transport
+                  {:use "org.spootnik.warp.transport.redis/redis-transport"}
+                  :security
+                  {:use "org.spootnik.warp.security/rsa-store"}
+                  :scenarios
+                  {:use "org.spootnik.warp.api/standard-scenario-store"}}]
+    (merge (get defaults key) (get config key))))
 
 (defn find-ns-var
   "Find a symbol in a namespace"
@@ -44,11 +54,11 @@
 (defn init
   [path]
   (let [config    (read-config path)
-        logging   (get-instance (merge default-logging (:logging config)))
-        codec     (get-instance (:codec config))
-        signer    (get-instance (:security config))
-        transport (get-instance (:transport config) codec signer)
-        scenarios (get-instance (:scenarios config))]
+        logging   (start-logging! (defaults :logging config))
+        codec     (get-instance  (defaults :codec config))
+        signer    (get-instance (defaults :security config))
+        transport (get-instance (defaults :transport config) codec signer)
+        scenarios (get-instance (defaults :scenarios config))]
     (assoc config
       :transport transport
       :codec     codec

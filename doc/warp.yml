@@ -1,14 +1,8 @@
-codec:
-  use: org.spootnik.warp.codec/json-codec
-transport:
-  use: org.spootnik.warp.transport.redis/redis-transport
 security:
-  use: org.spootnik.warp.security/rsa-store
   ca-priv: "doc/ca/ca.key"
   certdir: "doc/ca"
   suffix: "pem"
 scenarios:
-  use: org.spootnik.warp.api/standard-scenario-store
   path: "doc/scenarios"
 http:
   port: 8080
