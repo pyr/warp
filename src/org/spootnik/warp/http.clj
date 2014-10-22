@@ -13,6 +13,7 @@
             [org.spootnik.warp.engine       :as engine]
             [org.spootnik.warp.history      :as history]
             [qbits.jet.server               :as http]
+            [clojure.tools.logging          :refer [info]]
             [ring.middleware.cors           :refer [wrap-cors cors-hdrs]]))
 
 (defn json-response
@@ -23,7 +24,7 @@
 
 (defn yield-msg
   [chan]
-  (alts!! [chan (timeout 15000)]))
+  (alts!! [chan (timeout 25000)]))
 
 (defn api-routes
   [scenarios engine {:keys [origins] :or {origins []}}]
@@ -32,6 +33,10 @@
         publisher   (chan)
         publication (pub publisher #(:topic %))]
     (routes
+     (GET "/history" []
+          (json-response {:done @history/done
+                          :in-progress @history/in-progress}))
+
      (GET "/scenarios" []
           (json-response (api/all! scenarios)))
 
@@ -123,10 +128,18 @@
                         :let [msg (or msg {:type "keepalive"})
                               msg (dissoc msg "topic" :topic)
                               data (format "data: %s\n\n" (generate-string msg))]]
-                  (put! resp data))
+                  (let [open (put! resp data)]
+                    (when-not open (throw (ex-info "client disconnect"
+                                                   {:type :client-disconnect})))))
                 (catch Exception e
-                  (error e "cannot handle incoming message"))
+                  (let [{:keys [type]} (ex-data e)]
+                    (condp = type
+                      :client-disconnect
+                      (info "client disconnect")
+
+                      (error e "cannot handle incoming message"))))
                 (finally
+                  (close! channel)
                   (close! resp))))
 
             {:status 200

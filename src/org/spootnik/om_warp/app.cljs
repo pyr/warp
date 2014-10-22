@@ -19,7 +19,7 @@
                         :route "/scenarios/:scenario"
                         :tab :scenarios}
              :host-history {:handler views/scenario-host-history
-                            :route "/scenarios/:scenario/:host"
+                            :route "/scenarios/:scenario/:run/:host"
                             :tab :scenarios}})
 
 (def sync-chan (chan))

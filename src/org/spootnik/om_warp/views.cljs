@@ -8,8 +8,7 @@
             [om-bootstrap.panel :as p]
             [om-bootstrap.button :as b]
             [om-bootstrap.random :as r]
-            [org.spootnik.om-warp.utils :refer [redirect]]
-            ))
+            [org.spootnik.om-warp.utils :refer [redirect ansi-colors add-scripts]]))
 
 (defn state-from-event
   [app k]
@@ -31,7 +30,10 @@
   (put! chan {:resource resource :action :refresh}))
 
 (defn schedule-scenario [scenario profile chan e]
-  (put! chan {:resource :scenarios :action :execute :script scenario :profile profile}))
+  (let [scenario (if (= (type scenario) om/MapCursor)
+                   @scenario
+                   scenario)]
+    (put! chan {:resource :scenarios :action :execute :script scenario :profile profile})))
 
 (defcomponent scenario
   [[scn-name data] owner]
@@ -111,10 +113,10 @@
 (defcomponent host-history
   [[host steps] owner opts]
   (render-state
-    [this {:keys [scenario]}]
+    [this {:keys [scenario id]}]
     (dom/tr nil
       (dom/td nil
-        (dom/a {:href (str "#/scenarios/" scenario "/" host)} host))
+        (dom/a {:href (str "#/scenarios/" scenario "/" id "/" host)} host))
       (om/build-all step-row steps))))
 
 (defcomponent step-header
@@ -142,18 +144,27 @@
   [history owner]
   (render-state
     [this state]
-    (let [history (assoc history "hostsv" (->> (history "hostsv")
-                                              (sort-by #(first %))))]
+    (let [history (assoc history "hostsv" (->> (mapv ansi-colors (history "hosts"))
+                                               (mapv (partial add-scripts (:scripts state)))
+                                               (sort-by #(first %))))]
       (dom/div nil
-        (dom/h4 nil (str "History (" (history "total_done") " out of " (history "starting_hosts") " done)"))
+        (dom/h4 nil (dom/span nil "Run " (dom/code nil (history "id"))
+                              (if (= (history "total_done")
+                                     (history "starting_hosts"))
+                                (str " (" (history "total_done") " done)")
+                                (dom/span nil
+                                          " (" (history "total_done")
+                                          " out of "
+                                          (history "starting_hosts")
+                                          " done)"))))
         (dom/table {:class "table table-striped"}
           (dom/thead nil
             (dom/tr nil
               (dom/th nil "Host")
-              (om/build-all step-header (history "script"))
+              (om/build-all step-header (:scripts state))
               (dom/th nil "Complete")))
           (dom/tbody nil
-            (om/build-all host-history (history "hostsv") {:state state})))))))
+            (om/build-all host-history (history "hostsv") {:state (assoc state :id (history "id"))})))))))
 
 (defcomponent scenario-step
   [step owner]
@@ -186,7 +197,7 @@
                " " (dom/code nil (step "sleep")))))))
 
 (defcomponent scenario-panel
-  [[scenario history] owner]
+  [[scenario in-progress history] owner]
   (render
     [this]
     (p/panel {:header
@@ -196,7 +207,12 @@
       (dom/h4 nil "Script")
       (om/build-all scenario-step (scenario "script"))
       (dom/h4 nil "Match")
-      (dom/code nil (scenario "match"))
+      (dom/code nil (scenario "match")) " "
+      (b/button {:bs-style "primary"
+                 :bs-size "xsmall"
+                 :on-click (partial schedule-scenario scenario :default (om/get-shared owner :sync))}
+                "execute")
+
       (when-not (empty? (scenario "profiles"))
         (dom/div nil
           (dom/h4 nil "Profiles")
@@ -210,8 +226,21 @@
               (om/build-all profile (scenario "profiles") {:shared {:scenario scenario
                                                                     :sync (om/get-shared owner :sync)
                                                                     }})))))
-      (when-not (or (nil? history) (nil? (history "id")))
-        (om/build scenario-history history {:state {:scenario (scenario "script_name")}})))))
+      (when-not (or (nil? in-progress) (empty? in-progress) (nil? (scenario "script")))
+        (dom/div nil
+          (dom/h3 nil (str "In progress (" (count (keys in-progress)) ")"))
+          (om/build-all scenario-history
+                        (map #(second %)
+                             (sort-by #(first %)
+                                      (seq in-progress)))
+                        {:state {:scenario (scenario "script_name")
+                                 :scripts (scenario "script")}})))
+
+      (when-not (or (nil? history) (empty? history) (nil? (scenario "script")))
+        (dom/div nil
+          (dom/h3 nil "History")
+          (om/build-all scenario-history history {:state {:scenario (scenario "script_name")
+                                                          :scripts (scenario "script")}}))))))
 
 (defcomponent scenario-detail
   [app owner]
@@ -223,7 +252,7 @@
       (when-not (= current scenario)
         (do
           (om/transact! app :scenario
-                        (fn  [_]  {"script_name" scenario}))
+                        (fn [_] {"script_name" scenario}))
           (om/transact! app :history (fn [_] {}))
           (put! chan {:resource :scenarios :action :get :id scenario})))))
 
@@ -231,7 +260,9 @@
     [this]
     (let [scn (:scenario app)]
       (when-not (nil? scn)
-        (om/build scenario-panel [(:scenario app) (get-in app [:history (scn "script_name")])])))))
+        (om/build scenario-panel [(:scenario app)
+                                  (get-in app [:in-progress (scn "script_name")])
+                                  (get-in app [:done (scn "script_name")])])))))
 
 (defcomponent output
   [{:keys [typ out]} owner]
@@ -280,17 +311,21 @@
   [app owner]
   (will-mount
     [this]
-    (let [chan (om/get-shared owner :sync)
-          scenario (get-in app [:router :route-params :scenario])]
-      (when-not (get-in app [:history scenario])
-        (do
-          (put! chan {:resource :scenarios :action :get :id scenario})))))
+    (refresh (om/get-shared owner :sync) :scenarios))
 
   (render
     [this]
-    (let [scenario (get-in app [:router :route-params :scenario])
-          host (get-in app [:router :route-params :host])
-          [[_ data]] (filter #(= host (first %)) (get-in app [:history scenario "hostsv"]))]
+    (let [{:keys [scenario host run]} (get-in app [:router :route-params])
+          [_ scn] (first (filter #(= scenario (first %)) (:scenarios app)))]
+      (when scn
+        (let [scripts (scn "script")
+              data (get-in app [:in-progress scenario run])
+              data (or data (-> (filter #(= run (% "id"))
+                                        (get-in app [:done scenario]))
+                                (first)))
+              data (get-in data ["hosts" host])
+              [host data] (ansi-colors [host data])
+              [host data] (add-scripts scripts [host data])]
       (p/panel {:header (dom/h4 nil
                                 (dom/a {:href "#/scenarios"} "Scenarios")
                                 (dom/span nil " / ")
@@ -298,7 +333,7 @@
                                 (dom/span nil (str " / " host))
 
                               )}
-               (dom/div nil (om/build-all host-history-detail data))))))
+               (dom/div nil (om/build-all host-history-detail data))))))))
 
 (defcomponent index
   [app owner]

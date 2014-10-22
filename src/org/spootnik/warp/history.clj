@@ -1,7 +1,9 @@
 (ns org.spootnik.warp.history
-  (:require [org.spootnik.warp.api :as api]))
+  (:require [org.spootnik.warp.api :as api]
+            [clojure.tools.logging  :refer [info]]))  
 
-(def history (atom {}))
+(def done (atom {}))
+(def in-progress (atom {}))
 
 (def defaults
   {:hosts {}
@@ -12,34 +14,46 @@
 (defn fetch
   [store script_name]
   (let [scenario (api/get! store script_name)]
-    (assoc (get @history script_name defaults)
-      :script_name script_name
-      :script (-> scenario :script))))
+    {:done (get @done script_name [])
+     :in-progress (get @in-progress script_name {})
+     :script_name script_name
+     :script (-> scenario :script)}))
 
 (defn process
   [payload {:keys [msg type]}]
-  (if (= type :stop)
-    payload
-    (let [host    (:host msg)
-          id      (-> msg :id)
-          payload (or payload defaults)
-          payload (if (not= id (:id payload)) defaults payload)
-          payload (assoc payload :id id)
-          output  (or (get-in payload [:hosts host]) [])]
-      (cond
+  (let [host    (:host msg)
+        id      (-> msg :id)
+        payload (or payload defaults)
+        payload (if (not= id (:id payload)) defaults payload)
+        payload (assoc payload :id id)
+        output  (or (get-in payload [:hosts host]) [])]
+    (cond
 
-       (= type :ack)
-       (-> payload
-           (update-in [:total_acks] inc)
-           (cond-> (= (:status msg) "starting")
-                   (update-in [:starting_hosts] inc)))
+     (= type :ack)
+     (-> payload
+         (update-in [:total_acks] inc)
+         (cond-> (= (:status msg) "starting")
+                 (update-in [:starting_hosts] inc)))
 
-       (= type :resp)
-       (-> payload
-           (assoc-in [:hosts host] (conj output (:output msg)))
-           (cond-> (#{"finished" "failure"} (-> msg :output :status))
-                   (update-in [:total_done] inc)))))))
+     (= type :resp)
+     (-> payload
+         (assoc-in [:hosts host] (conj output (:output msg)))
+         (cond-> (#{"finished" "failure"} (-> msg :output :status))
+                 (update-in [:total_done] inc))))))
 
 (defn update
-  [script_name msg]
-  (swap! history update-in [script_name] process msg))
+  [script_name {:keys [type] :as msg}]
+  (info "update" script_name type msg)
+  (if (= type :stop)
+    (let [id (:id msg)
+          completed (get-in @in-progress [script_name id])]
+      (info "completed" completed)
+      (when completed
+        (swap! done update-in [script_name]
+               (comp (partial take 5) conj)
+               completed))
+      (swap! in-progress update-in [script_name] dissoc id)
+      (info "in-progress" @in-progress))
+    (do
+      (swap! in-progress update-in [script_name (get-in msg [:msg :id])] process msg)
+      (info "progress" @in-progress))))
