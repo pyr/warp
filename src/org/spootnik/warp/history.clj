@@ -21,27 +21,25 @@
 
 (defn process
   [payload {:keys [msg type]}]
-  (if (= type :stop)
-    payload
-    (let [host    (:host msg)
-          id      (-> msg :id)
-          payload (or payload defaults)
-          payload (if (not= id (:id payload)) defaults payload)
-          payload (assoc payload :id id)
-          output  (or (get-in payload [:hosts host]) [])]
-      (cond
+  (let [host    (:host msg)
+        id      (-> msg :id)
+        payload (or payload defaults)
+        payload (if (not= id (:id payload)) defaults payload)
+        payload (assoc payload :id id)
+        output  (or (get-in payload [:hosts host]) [])]
+    (cond
 
-       (= type :ack)
-       (-> payload
-           (update-in [:total_acks] inc)
-           (cond-> (= (:status msg) "starting")
-                   (update-in [:starting_hosts] inc)))
+     (= type :ack)
+     (-> payload
+         (update-in [:total_acks] inc)
+         (cond-> (= (:status msg) "starting")
+                 (update-in [:starting_hosts] inc)))
 
-       (= type :resp)
-       (-> payload
-           (assoc-in [:hosts host] (conj output (:output msg)))
-           (cond-> (#{"finished" "failure"} (-> msg :output :status))
-                   (update-in [:total_done] inc)))))))
+     (= type :resp)
+     (-> payload
+         (assoc-in [:hosts host] (conj output (:output msg)))
+         (cond-> (#{"finished" "failure"} (-> msg :output :status))
+                 (update-in [:total_done] inc))))))
 
 (defn update
   [script_name {:keys [type] :as msg}]
