@@ -6,7 +6,8 @@ warp distributes scenarios across any number of machines.
 > hubot: deploy to production, engage!
 
 ![build status](https://travis-ci.org/pyr/warp.svg)
-### The story
+
+## The story
 
 Your applications span a large group of hosts and deployment
 involves several separate steps.
@@ -33,7 +34,7 @@ Command executions can be scheduled through the following means:
 - API queries to the controller
 - IRC/Campfire/Hipchat through a [hubot](http://hubot.github.io) script
 
-### A sample scenario
+## A sample scenario
 
 ```yaml
 ## We give the scenario a name
@@ -69,7 +70,7 @@ profiles:
 ![warp index](http://i.imgur.com/qawWTTX.png)
 ![warp output](http://i.imgur.com/sYVRCHf.png)
 
-### Pub-Sub support
+## Pub-Sub support
 
 Currently, warp relies on the redis pub-sub functionnality
 for execution. 
@@ -94,3 +95,21 @@ warp aims to improve on amiral in the following ways:
 - Provide a lighter-weight agent
 - Support arguments
 
+## Development
+
+To build and run the controller:
+
+    lein cljsbuild
+    lein run -- -f doc/warp.yml
+
+When working on the ClojureScript part, you can automatically rebuild
+it when a change happens:
+
+    lein cljsbuild auto
+
+You can run the [agent](https://github.com/pyr/warp-agent) with:
+
+    cabal sandbox init
+    cabal install --only-dependencies
+    cabal build
+    cabal run warp-agent -- -v -f ../warp/doc/warp-agent.json
