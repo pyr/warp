@@ -78,5 +78,5 @@ module.exports = (robot) ->
     es.onerror = ->
       es.close()
 
-  robot.respond /(?:warp me|engage!) (\S+)(?: to (\S+)(?: (\S+))?)?(?: with (.*))?$/i, response
-  robot.hear /(\S+)(?: to (\S+)(?: (\S+))?)?(?: with (.*))?[,\.] [eE]ngage!$/i, response
+  robot.respond /(?:warp me|engage ?!) (\S+)(?: to (\S+)(?: (\S+))?)?(?: with (.*))?$/i, response
+  robot.hear /(\S+)(?: to (\S+)(?: (\S+))?)?(?: with (.*))?[,\.] [eE]ngage ?!$/i, response
