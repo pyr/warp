@@ -1,7 +1,7 @@
 (ns org.spootnik.om-warp.router
   (:require [goog.events :as events]
             [goog.history.EventType :as EventType]
-            [secretary.core :as secretary :include-macros true :refer [defroute]])
+            [secretary.core :as secretary])
   (:import goog.History))
 
 (defn init!
