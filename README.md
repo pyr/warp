@@ -85,7 +85,7 @@ warp and [warp-agent](https://github.com/pyr/warp-agent) borrow
 from [mcollective](http://puppetlabs.com/mcollective) and my first
 implementation within [amiral](https://github.com/pyr/amiral)
 
-warp aims to improve on amiral in the following ways:
+Warp aims to improve on amiral in the following ways:
 
 - Bundle matchers, timeouts and a list of commands (a script) options
   in named "scenarios"
