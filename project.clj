@@ -23,19 +23,19 @@
                  [org.clojure/data.json         "0.2.5"]
                  [org.clojure/data.codec        "0.1.0"]
                  [clj-yaml                      "0.4.0"]
-                 [compojure                     "1.2.0"]
-                 [cc.qbits/jet                  "0.5.0-beta2"]
+                 [compojure                     "1.3.2"]
+                 [cc.qbits/jet                  "0.5.4"]
                  [ring/ring-json                "0.3.1"]
-                 [redis.clients/jedis           "2.6.0"]
+                 [redis.clients/jedis           "2.6.2"]
                  [org.bouncycastle/bcprov-jdk16 "1.46"]
                  [jumblerg/ring.middleware.cors "1.0.1"]
-                 [org.spootnik/logconfig        "0.7.2"]
+                 [org.spootnik/logconfig        "0.7.3"]
 
-                 [org.clojure/clojurescript     "0.0-2760"]
+                 [org.clojure/clojurescript     "0.0-2913"]
                  [org.omcljs/om                 "0.8.8"]
                  [secretary                     "1.2.1"]
                  [racehub/om-bootstrap          "0.4.0"
                   :exclusions [org.clojure/clojure]]
                  [prismatic/om-tools            "0.3.10"
                   :exclusions [org.clojure/clojure]]
-                 [cljs-ajax                     "0.3.9"]])
+                 [cljs-ajax                     "0.3.10"]])
