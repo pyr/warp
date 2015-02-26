@@ -23,7 +23,7 @@ This process is likely the same for several profiles such as
 
 ![warp scenarios](http://i.imgur.com/6svdQH9.png)
 
-warp provides a DSL for writing scenarios and schedules
+Warp provides a DSL for writing scenarios and schedules
 executions over a pub-sub system, streaming the results
 to the controller which makes results available through
 an API and web view
