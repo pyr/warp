@@ -50,21 +50,21 @@ module.exports = (robot) ->
 
   warp_url = process.env.HUBOT_WARP_URL
 
-  response = (msg) ->
+  response = (msg, scenario, profile, margs, pargs) ->
 
-    scenario = msg.match[1]
+    scenario = scenario
       .split(/\ +/)
       .filter((a) -> a)
       .join("-")
     args = []
-    if msg.match[2]
-      args.push('profile=' + encodeURIComponent(msg.match[2]))
+    if profile
+      args.push('profile=' + encodeURIComponent(profile))
 
-    if msg.match[3]
-      args.push('matchargs=' + encodeURIComponent(arg)) for arg in msg.match[3].split(" ")
+    if margs
+      args.push('matchargs=' + encodeURIComponent(arg)) for arg in margs.split(" ")
 
-    if msg.match[4]
-      args.push('args=' + encodeURIComponent(arg)) for arg in msg.match[4].split(" ")
+    if pargs
+      args.push('args=' + encodeURIComponent(arg)) for arg in pargs.split(" ")
 
     warp = new Warp(scenario, msg)
     url = warp_url + "/scenarios/" + scenario + "/executions"
@@ -78,5 +78,13 @@ module.exports = (robot) ->
     es.onerror = ->
       es.close()
 
-  robot.respond /(?:warp me|engage ?!) (\S+)(?: to (\S+)(?: ([\S ]+?))?)?(?: with (.*))?$/i, response
-  robot.hear /(\S+)(?: to (\S+)(?: ([\S ]+?))?)?(?: with (.*))?[,\.] [eE]ngage ?!$/i, response
+  handle = (msg) ->
+    mo = msg.match[1].match /(.+?)(?: to (\S+)(?: ([\S ]+?))?)?(?: with (.*))$/i
+    if mo
+      return response msg, mo[1], mo[2], mo[3], mo[4]
+    mo = msg.match[1].match /(.+?)(?: to (\S+)(?: ([\S ]+?))?)?$/i
+    if mo
+      return response msg, mo[1], mo[2], mo[3]
+
+  robot.respond /(?:warp me|engage ?!) (.*)/i, handle
+  robot.hear    /(.*)[,\.] [eE]ngage ?!$/i, handle
