@@ -15,7 +15,7 @@
               :compiler {:output-to "resources/public/warp/app.js"
                          :output-dir "resources/public/warp"
                          :asset-path "/warp"
-                         :optimizations :none
+                         :optimizations :whitespace
                          :pretty-print false}
               :main org.spootnik.om_warp.app}]}
   :dependencies [[org.clojure/clojure           "1.7.0"]
