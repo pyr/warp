@@ -1,4 +1,5 @@
-(ns org.spootnik.om-warp.ansi)
+(ns org.spootnik.om-warp.ansi
+  (:require [clojure.string :as string]))
 
 (def colors
   ["black"
@@ -17,14 +18,14 @@
 
 (defn escape
   [text]
-  (clojure.string/replace
+  (string/replace
     text
-    (re-pattern (str "[" (clojure.string/join "" (keys replacements)) "]"))
+    (re-pattern (str "[" (string/join "" (keys replacements)) "]"))
     #(replacements %1)))
 
 (defn linkify
   [text]
-  (clojure.string/replace
+  (string/replace
     text
     #"(https?://[^\s]+)"
     "<a href=\"$1\">$1</a>"))
@@ -49,19 +50,19 @@
 
 (defn get-classes
   [styles]
-  (clojure.string/join " " (remove nil? (vals styles))))
+  (string/join " " (remove nil? (vals styles))))
 
 (defn process-parts
   [styles [part & parts] done]
-  (let [lines (clojure.string/split part "\n" -1)
+  (let [lines (string/split part "\n" -1)
         [_ codes text] (re-matches #"([\d;]+?)?m(.*)" (first lines))
         text           (str (or text (first lines))
                             (if (empty? (rest lines)) "" "\n")
-                            (clojure.string/join "\n" (rest lines)))
+                            (string/join "\n" (rest lines)))
         next-styles    (if (nil? codes)
                          {}
                          (apply merge (map (comp style int)
-                                           (clojure.string/split codes ";"))))
+                                           (string/split codes ";"))))
         styles         (merge styles next-styles)
         classes        (get-classes styles)
         done           (if (empty? classes)
@@ -77,5 +78,5 @@
     (let [text (-> text
                    (escape)
                    (linkify))
-          parts (clojure.string/split text #"\033\[")]
+          parts (string/split text #"\033\[")]
       (process-parts {} parts ""))))
