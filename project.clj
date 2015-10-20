@@ -8,6 +8,7 @@
   :plugins [[lein-cljsbuild "1.1.0"]]
   :clean-targets ^{:protect false} [:target-path
                                     "resources/public/warp"]
+  :prep-tasks ["compile" ["cljsbuild" "once"]]
   :cljsbuild {
     :builds [{:id "om-warp"
               :source-paths ["src/org/spootnik/om_warp"]
