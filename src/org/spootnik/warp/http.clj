@@ -82,7 +82,7 @@
                 (doseq [msg (repeatedly #(<!! ch))
                         :while msg
                         :when msg]
-                  (history/update script_name msg)
+                  (history/update-script script_name msg)
                   (when stream
                     (put! resp (format "data: %s\n\n" (generate-string msg))))
                   (put! publisher (assoc msg :topic :events)))

@@ -41,7 +41,7 @@
          (cond-> (#{"finished" "failure"} (-> msg :output :status))
                  (update-in [:total_done] inc))))))
 
-(defn update
+(defn update-script
   [script_name {:keys [type] :as msg}]
   (info "update" script_name type msg)
   (if (= type :stop)
