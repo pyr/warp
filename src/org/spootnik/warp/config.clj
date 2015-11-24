@@ -1,6 +1,6 @@
 (ns org.spootnik.warp.config
-  (:require [clj-yaml.core          :as yaml]
-            [org.spootnik.logconfig :refer [start-logging!]]))
+  (:require [clj-yaml.core :as yaml]
+            [unilog.config :refer [start-logging!]]))
 
 (defn defaults
   [key config]
