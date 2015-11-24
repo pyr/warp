@@ -30,7 +30,7 @@
                  [redis.clients/jedis           "2.6.2"]
                  [org.bouncycastle/bcprov-jdk16 "1.46"]
                  [jumblerg/ring.middleware.cors "1.0.1"]
-                 [org.spootnik/logconfig        "0.7.3"]
+                 [spootnik/unilog               "0.7.13"]
 
                  [org.clojure/clojurescript     "1.7.145"]
                  [org.omcljs/om                 "0.9.0"]
