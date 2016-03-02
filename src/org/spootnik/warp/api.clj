@@ -7,14 +7,15 @@
 
 (defn interpol
   ([input args not-found]
+   (when (string? input)
      (let [clean   #(str/replace % #"(\{\{|\}\})" "")
            args    (assoc (into {} (map-indexed #(vector (str %1) %2) args))
-                     "*" (str/join " " args))
+                          "*" (str/join " " args))
            extract (fn [k] (or (get args (clean k))
                                (if (fn? not-found)
                                  (not-found k)
                                  not-found)))]
-       (str/replace input #"\{\{[0-9*]+\}\}" extract)))
+       (str/replace input #"\{\{[0-9*]+\}\}" extract))))
   ([input args]
      (interpol input args "")))
 
@@ -25,7 +26,9 @@
    (interpol command args)
 
    (and (:shell command) (not (:literal command)))
-   (update-in command [:shell] interpol args)
+   (-> command
+       (update-in [:shell] interpol args)
+       (update-in [:cwd] interpol args))
 
    :else
    command))
