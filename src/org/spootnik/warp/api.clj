@@ -26,9 +26,9 @@
    (interpol command args)
 
    (and (:shell command) (not (:literal command)))
-   (-> command
-       (update-in [:shell] interpol args)
-       (update-in [:cwd] interpol args))
+   (cond-> command
+     (:shell command) (update-in [:shell] interpol args)
+     (:cwd command)   (update-in [:cwd] interpol args))
 
    :else
    command))
