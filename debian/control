@@ -1,0 +1,16 @@
+Source: warp
+Priority: optional
+Section: net
+Maintainer: vbe@exoscale.ch
+
+Package: warp-controller
+Architecture: all
+Depends: ${misc:Depends},
+         default-jre-headless (>= 1.8) | java7-runtime-headless | java8-runtime-headless,
+         adduser
+Description: Warp commander (daemon/controller)
+
+Package: warp-minion
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Warp agent (client/agent)

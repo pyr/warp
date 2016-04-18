@@ -1,6 +1,8 @@
 {
-    "cacert": "ca/ca.pem",
-    "privkey": "ca/_default.key",
-    "redis_host": "localhost",
-    "redis_port": 6379
+    "host":    "agent.example.com",
+    "log":     "syslog",
+    "server":  "controller.example.com:6380",
+    "cacert":  "/etc/warp/certs/ca-crt.pem",
+    "cert":    "/etc/warp/certs/agent.pem",
+    "privkey": "/etc/warp/certs/agent.key.pem"
 }

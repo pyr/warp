@@ -5,6 +5,7 @@ pom.xml
 pom.xml.asc
 *.jar
 *.class
+/site
 /.lein-*
 /.nrepl-port
 resources/public/warp

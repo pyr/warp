@@ -49,10 +49,13 @@ pre .background-bright-white { background-color: rgb(255,255,255); }
 		</style>
 	</head>
 	<body>
-		<div id="nav"></div>
-		<div class="container">
-			<div id="app"></div>
-		</div>
-		<script src="warp/app.js" type="text/javascript"></script>
+          <nav class="navbar navbar-default">
+            <a class="navbar-brand" href="#/">Warp</a>
+          </nav>
+	  <div class="container">
+	    <div id="app"></div>
+	  </div>
+	  <script src="warp/app.js" type="text/javascript"></script>
+          <script type="text/javascript">warp.client.app.run();</script>
 	</body>
 </html>

@@ -1,0 +1,7 @@
+# -*- sh -*-
+
+JAVA=java
+JAVA_OPTS=
+CLASSPATH=/usr/share/java/warp-controller.jar
+
+export JAVA JAVA_OPTS CLASSPATH
