@@ -1,8 +1,0 @@
-script_name: hello-world
-script:
-  - "echo hello world my name is `hostname`"
-profiles:
-  host:
-    match:
-      host: "{{0}}"
-timeout: 15000

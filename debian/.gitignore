@@ -1,0 +1,6 @@
+/*.log
+/*.debhelper
+/*.substvars
+/*-stamp
+/files
+/warp*/
