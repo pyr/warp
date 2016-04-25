@@ -129,9 +129,9 @@
                     [(success-output (every? :success steps))])))
 
 (defn replay-summary
-  [{:keys [clients accepted refused total scenario id]}]
+  [{:keys [clients accepted refused total scenario id started]}]
   (panel
-   [:span "Run:" (code id)]
+   [:span "Run:" (code id) " @" started]
    (table-striped
     (vec
      (concat ["Host"]
