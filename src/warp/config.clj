@@ -1,6 +1,5 @@
 (ns warp.config
-  (:require [com.stuartsierra.component :as component]
-            [clojure.edn                :as edn]
+  (:require [clojure.edn                :as edn]
             [clojure.tools.logging      :refer [error info debug]]))
 
 (def default-logging
