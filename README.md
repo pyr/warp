@@ -36,33 +36,17 @@ Command executions can be scheduled through the following means:
 
 ## A sample scenario
 
-```yaml
-## We give the scenario a name
-script_name: webapp-deploy
-
-## A matcher determines how 
-match:
-  and:
-    - fact: "platform"
-      value: "webapp-hosts"
-    - fact: "environment"
-      value: "staging"
-script:
-  - "apt-get update"
-  - shell: "puppet agent -t"
-    exits: [0, 2]
-  - "apt-get install webapp"
-  - service: "webapp"
-    action: "reload"
-timeout: 15000
-profiles:
-  production:
-    match:
-      and:
-        - fact: "platform"
-          value: "webapp-hosts"
-        - fact: "environment"
-          value: "production"
+```clj
+{:timeout 2
+ :name    "ping"
+ :matcher {:type :none}
+ :profiles {:everyone {:type :all}
+            :platform {:type :and :clauses [{:type :fact :fact "facter.sp_environment" :value "{{0}}"}
+                                            {:type :fact :fact "facter.platform" :value "{{1}}"}]}
+            :prod     {:type :fact :fact "facter.sp_environment" :value "prod"}
+            :preprod  {:type :fact :fact "facter.sp_environment" :value "preprod"}
+            :host     {:type :host :host "{{0}}"}}
+ :commands [{:type :ping}]}
 ```
 
 ## More screenshots
@@ -72,16 +56,9 @@ profiles:
 
 ## Pub-Sub support
 
-Currently, warp relies on the redis pub-sub functionnality
-for execution. 
-warp works hand in hand with any number of
-[warp-agent's](https://github.com/pyr/warp-agent), schedules
-scenarios for execution.
+Scenario execution happens through an HTTP api.
 
-scenario creation an execution happens through an HTTP api,
-a command-line client is coming up.
-
-warp and [warp-agent](https://github.com/pyr/warp-agent) borrow
+Warp and [warp-agent](https://github.com/pyr/warp-agent) borrow
 from [mcollective](http://puppetlabs.com/mcollective) and my first
 implementation within [amiral](https://github.com/pyr/amiral)
 
@@ -100,16 +77,13 @@ Warp aims to improve on amiral in the following ways:
 To build and run the controller:
 
     lein cljsbuild
-    lein run -- -f doc/warp.yml
+    lein run -- -f doc/controller.clj
 
 When working on the ClojureScript part, you can automatically rebuild
 it when a change happens:
 
     lein cljsbuild auto
 
-You can run the [agent](https://github.com/pyr/warp-agent) with:
+You can run the agent with:
 
-    cabal sandbox init
-    cabal install --only-dependencies
-    cabal build
-    cabal run warp-agent -- -v -f ../warp/doc/warp-agent.json
+    ./agent/warp-agent doc/warp-agent.json
