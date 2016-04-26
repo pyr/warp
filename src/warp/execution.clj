@@ -1,5 +1,6 @@
 (ns warp.execution
-  (:require [clojure.tools.logging :refer [debug info]]))
+  (:require [clojure.tools.logging :refer [debug info]]
+            [clj-time.core         :refer [now]]))
 
 
 (defrecord Event     [host opcode sequence step output])
@@ -14,6 +15,7 @@
   (map->Client {:host  host
                 :state :running
                 :index 0
+                :started now
                 :max   max
                 :steps []}))
 
@@ -22,6 +24,7 @@
   (map->Execution {:id         id
                    :scenario   scenario
                    :state      :running
+                   :started    now
                    :accepted   0
                    :refused    0
                    :total      0
