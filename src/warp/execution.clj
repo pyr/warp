@@ -15,6 +15,7 @@
   (map->Client {:host  host
                 :state :running
                 :index 0
+                :started now
                 :max   max
                 :steps []}))
 
