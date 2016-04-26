@@ -1,36 +1,38 @@
 (ns warp.execution
   (:require [clojure.tools.logging :refer [debug info]]
-            [clj-time.core         :refer [now]]))
+            [clj-time.local        :refer [format-local-time local-now]]))
 
 
 (defrecord Event     [host opcode sequence step output])
 
-(defrecord Client    [host state steps index max])
+(defrecord Client    [host state steps index started max])
 
-(defrecord Execution [id scenario state accepted refused
+(defrecord Execution [id scenario state started accepted refused
                       total clients listener can-close?])
 
 (defn make-client
   [host max]
-  (map->Client {:host  host
-                :state :running
-                :index 0
-                :started now
-                :max   max
-                :steps []}))
+  (let [current (format-local-time (local-now) :date-hour-minute-second-ms)]
+    (map->Client {:host  host
+                  :state :running
+                  :index 0
+                  :started current
+                  :max   max
+                  :steps []})))
 
 (defn make-execution
   [id scenario listener]
-  (map->Execution {:id         id
+  (let [current (format-local-time (local-now) :date-hour-minute-second-ms)]
+    (map->Execution {:id         id
                    :scenario   scenario
                    :state      :running
-                   :started    now
+                   :started    current
                    :accepted   0
                    :refused    0
                    :total      0
                    :listener   listener
                    :clients    {}
-                   :can-close? false}))
+                   :can-close? false})))
 
 (defn close
   [client]
