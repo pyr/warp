@@ -20,8 +20,8 @@
      "Scenarios"
      (table-striped
       ["Scenario" "Timeouts" "Default Matcher"]
-      (for [scenario (sort-by :id (:scenarios @app))]
-        ^{:key (:id scenario)} [scenario-tr scenario])))))
+      (for [scenario (sort-by :name (:scenarios @app))]
+        ^{:key (:name scenario)} [scenario-tr scenario])))))
 
 (defmulti scenario-cmd-summary :type)
 
