@@ -84,10 +84,7 @@ func (m NotMatcher) Validate(env Environment) bool {
 }
 
 func (m HostMatcher) Validate(env Environment) bool {
-	if env.Host() == m.Host {
-		return true
-	}
-	return false
+	return (env.Host() == m.Host)
 }
 
 func (m FactMatcher) Validate(env Environment) bool {
