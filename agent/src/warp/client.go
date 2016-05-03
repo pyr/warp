@@ -182,8 +182,6 @@ func WritePacket(logger *log.Logger, conn *tls.Conn, p *Packet) error {
 		return err
 	}
 
-	logger.Printf("ready to send packet: %s", string(jsbuf))
-
 	plen := len(jsbuf)
 	pilen := uint32(plen)
 
