@@ -2,6 +2,11 @@ Source: warp
 Priority: optional
 Section: net
 Maintainer: vbe@exoscale.ch
+Build-Depends: debhelper (>= 9),
+               default-jre-headless (>= 1.8) | java7-runtime-headless | java8-runtime-headless,
+               lsb-release,
+               leiningen,
+               golang
 
 Package: warp-controller
 Architecture: all
