@@ -3,7 +3,7 @@ Priority: optional
 Section: net
 Maintainer: vbe@exoscale.ch
 Build-Depends: debhelper (>= 9),
-               default-jre-headless (>= 1.8) | java7-runtime-headless | java8-runtime-headless,
+               default-jre-headless (>= 1:1.8) | java7-runtime-headless | java8-runtime-headless,
                lsb-release,
                leiningen,
                golang
@@ -11,7 +11,7 @@ Build-Depends: debhelper (>= 9),
 Package: warp-controller
 Architecture: all
 Depends: ${misc:Depends},
-         default-jre-headless (>= 1.8) | java7-runtime-headless | java8-runtime-headless,
+         default-jre-headless (>= 1:1.8) | java7-runtime-headless | java8-runtime-headless,
          adduser
 Description: Warp commander (daemon/controller)
 
