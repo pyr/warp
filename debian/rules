@@ -15,6 +15,9 @@ override_dh_auto_configure:
 override_dh_auto_test:
 override_dh_auto_install:
 
+# Too long on JAR files
+override_dh_strip_nondeterminism:
+
 override_dh_auto_build: $(info I: DEBVERSION=$(DEBVERSION))
 	lein uberjar
 	cd agent && make
