@@ -5,7 +5,7 @@ VERSION := $(shell head -n1 project.clj | awk '{print $$3}')
 DEBVERSION := $(subst -SNAPSHOT,~$(shell date +%Y%m%d-%H%M%S),$(VERSION))-0~$(DISTRIBUTION)3
 
 %:
-	dh $@
+	dh --with-systemd $@
 
 override_dh_gencontrol:
 	dh_gencontrol -- -v$(DEBVERSION)
