@@ -85,10 +85,12 @@ func NewClient(cfg Config) *Client {
 				client.Connected = true
 				logger.Printf("connected")
 			}
+			client.Conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
 			p, err := ReadPacket(logger, client.Conn)
 			if err != nil {
 				logger.Printf("read error: %v", err)
 				client.Connected = false
+				client.Conn.Close()
 				client.Conn = nil
 			} else {
 				input <- p
