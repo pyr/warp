@@ -1,28 +1,28 @@
 package warp
 
 import (
-	"fmt"
-	"errors"
 	"bytes"
-	"os"
-	"time"
-	"log"
-	"log/syslog"
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
-	"sync"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"log/syslog"
+	"os"
+	"sync"
+	"time"
 )
 
 type Client struct {
-	Config Config
-	Conn *tls.Conn
-	Logger *log.Logger
+	Config    Config
+	Conn      *tls.Conn
+	Logger    *log.Logger
 	Connected bool
-	Input chan *Packet
-	Output chan *Packet
+	Input     chan *Packet
+	Output    chan *Packet
 }
 
 func NewClient(cfg Config) *Client {
@@ -36,7 +36,7 @@ func NewClient(cfg Config) *Client {
 	case cfg.LogTo == "stderr":
 		logger = log.New(os.Stderr, "warp: ", 0)
 	case cfg.LogTo == "syslog":
-		logger, err = syslog.NewLogger(syslog.LOG_INFO | syslog.LOG_DAEMON, 0)
+		logger, err = syslog.NewLogger(syslog.LOG_INFO|syslog.LOG_DAEMON, 0)
 		if err != nil {
 			fmt.Printf("cannot initialize logger: %v", err)
 			os.Exit(1)
@@ -59,7 +59,7 @@ func NewClient(cfg Config) *Client {
 
 	tlscfg := &tls.Config{
 		Certificates: []tls.Certificate{cert},
-		RootCAs: capool,
+		RootCAs:      capool,
 	}
 	tlscfg.BuildNameToCertificate()
 
@@ -74,7 +74,7 @@ func NewClient(cfg Config) *Client {
 
 	go func() {
 		for {
-			if (client.Connected == false) {
+			if client.Connected == false {
 				conn, err := tls.Dial("tcp", cfg.Server, tlscfg)
 				if err != nil {
 					logger.Printf("unabled to connect, will retry in 5 seconds: %v", err)
@@ -100,16 +100,16 @@ func NewClient(cfg Config) *Client {
 
 	go func() {
 		for {
-			p := <- input
+			p := <-input
 			client.HandleRequest(p, env)
 		}
 	}()
 
 	go func() {
 		for {
-			p := <- output
+			p := <-output
 			p.Host = cfg.Host
-			if (client.Connected == false) {
+			if client.Connected == false {
 				logger.Printf("not connected, dropping output packet")
 				continue
 			}
@@ -137,7 +137,7 @@ func ReadPacket(logger *log.Logger, conn *tls.Conn) (*Packet, error) {
 		return nil, errors.New("short read")
 	}
 
-	br = br -4
+	br = br - 4
 	phead := inbuf[0:4]
 	b := bytes.NewReader(phead)
 
@@ -154,7 +154,7 @@ func ReadPacket(logger *log.Logger, conn *tls.Conn) (*Packet, error) {
 		if br >= plen {
 			break
 		}
-		buf := make([]byte,(plen - br))
+		buf := make([]byte, (plen - br))
 		nr, err := conn.Read(buf)
 		if err != nil {
 			conn.Close()

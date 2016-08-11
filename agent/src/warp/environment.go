@@ -1,13 +1,13 @@
 package warp
 
 import (
-	"time"
-	"log"
 	"bytes"
-	"strings"
-	"fmt"
 	"encoding/json"
+	"fmt"
+	"log"
 	"os/exec"
+	"strings"
+	"time"
 )
 
 type Environment interface {
@@ -34,7 +34,7 @@ func updatePayload(payload map[string]string) {
 }
 
 func PrefixedKey(prefix string, k string) string {
-	if (prefix == "") {
+	if prefix == "" {
 		return k
 	} else {
 		return fmt.Sprintf("%s.%s", prefix, k)
@@ -43,8 +43,7 @@ func PrefixedKey(prefix string, k string) string {
 
 func BuildPrefixedEnv(env map[string]string, prefix string, values map[string]interface{}) {
 
-
-	for k,v := range(values) {
+	for k, v := range values {
 		pk := PrefixedKey(prefix, k)
 		switch x := v.(type) {
 		case map[string]interface{}:
@@ -79,7 +78,7 @@ func BuildEnv(logger *log.Logger, env map[string]string) {
 			return
 		}
 
-		for k := range(env) {
+		for k := range env {
 			delete(env, k)
 		}
 		BuildPrefixedEnv(env, "facter", outmap)

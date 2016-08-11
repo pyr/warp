@@ -1,38 +1,38 @@
 package warp
 
 import (
-	"fmt"
-	"strings"
 	"bytes"
-	"time"
+	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
+	"time"
 )
 
 type CommandType string
 
 const (
-	COMMAND_PING CommandType = "ping"
-	COMMAND_SLEEP CommandType = "sleep"
+	COMMAND_PING    CommandType = "ping"
+	COMMAND_SLEEP   CommandType = "sleep"
 	COMMAND_SERVICE CommandType = "service"
-	COMMAND_SHELL CommandType = "shell"
+	COMMAND_SHELL   CommandType = "shell"
 )
 
 type CommandDescription struct {
-	Type CommandType `json:"type" binding:"required"`
-	Seconds time.Duration `json:"seconds,omitempty"`
-	Service *string `json:"service,omitempty"`
-	Action *string `json:"action,omitempty"`
-	Cwd *string `json:"cwd,omitempty"`
-	Exits *[]int `json:"exits,omitempty"`
-	ShellScript string `json:"shell,omitempty"`
+	Type        CommandType   `json:"type" binding:"required"`
+	Seconds     time.Duration `json:"seconds,omitempty"`
+	Service     *string       `json:"service,omitempty"`
+	Action      *string       `json:"action,omitempty"`
+	Cwd         *string       `json:"cwd,omitempty"`
+	Exits       *[]int        `json:"exits,omitempty"`
+	ShellScript string        `json:"shell,omitempty"`
 }
 
 type CommandOutput struct {
-	Success bool `json:"success"`
-	ExitCode int `json:"exit"`
-	Output string `json:"output"`
+	Success  bool   `json:"success"`
+	ExitCode int    `json:"exit"`
+	Output   string `json:"output"`
 }
 
 type Command interface {
@@ -48,12 +48,12 @@ type SleepCommand struct {
 
 type ServiceCommand struct {
 	Service string
-	Action string
+	Action  string
 }
 
 type ShellCommand struct {
-	Cwd string
-	Exits *[]int
+	Cwd         string
+	Exits       *[]int
 	ShellScript string
 }
 
@@ -67,7 +67,7 @@ func (sc SleepCommand) Execute() CommandOutput {
 }
 
 func ValidExit(exits *[]int, exitCode int) bool {
-	for _, e := range(*exits) {
+	for _, e := range *exits {
 		if e == exitCode {
 			return true
 		}
@@ -79,9 +79,9 @@ func (sh ShellCommand) Execute() CommandOutput {
 	oldwd, err := os.Getwd()
 	if err != nil {
 		return CommandOutput{
-			Success: false,
+			Success:  false,
 			ExitCode: -1,
-			Output: fmt.Sprintf("cannot get dir: %v", err),
+			Output:   fmt.Sprintf("cannot get dir: %v", err),
 		}
 	}
 	stdin := strings.NewReader("")
@@ -89,9 +89,9 @@ func (sh ShellCommand) Execute() CommandOutput {
 
 	if err = os.Chdir(sh.Cwd); err != nil {
 		return CommandOutput{
-			Success: false,
+			Success:  false,
 			ExitCode: -1,
-			Output: fmt.Sprintf("cannot change dir: %v", err),
+			Output:   fmt.Sprintf("cannot change dir: %v", err),
 		}
 	}
 	cmd := exec.Command("bash", "-c", sh.ShellScript)
@@ -108,7 +108,7 @@ func (sh ShellCommand) Execute() CommandOutput {
 			output = out.String()
 		} else {
 			exitCode = -1
-			output  = fmt.Sprintf("cannot run process: %v", err)
+			output = fmt.Sprintf("cannot run process: %v", err)
 		}
 	} else {
 		output = out.String()
@@ -139,7 +139,7 @@ func (sc ServiceCommand) Execute() CommandOutput {
 			output = out.String()
 		} else {
 			exitCode = -1
-			output  = fmt.Sprintf("cannot run process: %v", err)
+			output = fmt.Sprintf("cannot run process: %v", err)
 		}
 	} else {
 		output = out.String()
