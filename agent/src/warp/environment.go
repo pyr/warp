@@ -54,7 +54,7 @@ func BuildPrefixedEnv(env map[string]string, prefix string, values map[string]in
 	}
 }
 
-func BuildEnv(logger *log.Logger, env map[string]string) {
+func BuildEnv(logger *log.Logger, host string, env map[string]string) {
 
 	for {
 		stdin := strings.NewReader("")
@@ -81,6 +81,7 @@ func BuildEnv(logger *log.Logger, env map[string]string) {
 		for k := range env {
 			delete(env, k)
 		}
+		env["host"] = host
 		BuildPrefixedEnv(env, "facter", outmap)
 		time.Sleep(120 * time.Second)
 	}

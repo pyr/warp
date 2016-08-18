@@ -69,8 +69,9 @@ func NewClient(cfg Config) *Client {
 	env := MapEnvironment{Internal: envmap}
 
 	client := &Client{Config: cfg, Conn: nil, Logger: logger, Connected: false, Input: input, Output: output}
+	envmap["host"] = cfg.Host
 
-	go BuildEnv(logger, envmap)
+	go BuildEnv(logger, cfg.Host, envmap)
 
 	go func() {
 		for {
