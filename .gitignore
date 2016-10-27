@@ -8,4 +8,6 @@ pom.xml.asc
 /site
 /.lein-*
 /.nrepl-port
+/agent/warp-agent
+/agent/pkg/
 resources/public/warp

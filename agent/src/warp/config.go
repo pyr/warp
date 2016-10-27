@@ -1,19 +1,19 @@
 package warp
 
 import (
-	"io/ioutil"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 )
 
 type Config struct {
-	Host string  `json:"host" binding:"required"`
-	Cert string `json:"cert" binding:"required"`
-	CaCert string `json:"cacert" binding:"required"`
+	Host    string `json:"host" binding:"required"`
+	Cert    string `json:"cert" binding:"required"`
+	CaCert  string `json:"cacert" binding:"required"`
 	PrivKey string `json:"privkey" binding:"required"`
-	Server string `json:"server" binding:"required"`
-	LogTo string `json:"log" binding:"required"`
+	Server  string `json:"server" binding:"required"`
+	LogTo   string `json:"log" binding:"required"`
 }
 
 func ReadConfig(path string) Config {

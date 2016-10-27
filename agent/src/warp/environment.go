@@ -1,13 +1,14 @@
 package warp
 
 import (
-	"time"
-	"log"
 	"bytes"
-	"strings"
-	"fmt"
 	"encoding/json"
+	"fmt"
+	"log"
 	"os/exec"
+	"strings"
+	"sync"
+	"time"
 )
 
 type Environment interface {
@@ -16,15 +17,28 @@ type Environment interface {
 }
 
 type MapEnvironment struct {
-	Internal map[string]string
+	internal map[string]string
+	lock     sync.RWMutex
 }
 
 func (me MapEnvironment) Host() string {
-	return me.Internal["host"]
+	me.lock.RLock()
+	defer me.lock.RUnlock()
+	return me.internal["host"]
 }
 
 func (me MapEnvironment) Lookup(k string) string {
-	return me.Internal[k]
+	me.lock.RLock()
+	defer me.lock.RUnlock()
+	return me.internal[k]
+}
+
+func NewEnvironment(host string) *MapEnvironment {
+	return &MapEnvironment{
+		internal: map[string]string{
+			"host": host,
+		},
+	}
 }
 
 func updatePayload(payload map[string]string) {
@@ -34,7 +48,7 @@ func updatePayload(payload map[string]string) {
 }
 
 func PrefixedKey(prefix string, k string) string {
-	if (prefix == "") {
+	if prefix == "" {
 		return k
 	} else {
 		return fmt.Sprintf("%s.%s", prefix, k)
@@ -43,8 +57,7 @@ func PrefixedKey(prefix string, k string) string {
 
 func BuildPrefixedEnv(env map[string]string, prefix string, values map[string]interface{}) {
 
-
-	for k,v := range(values) {
+	for k, v := range values {
 		pk := PrefixedKey(prefix, k)
 		switch x := v.(type) {
 		case map[string]interface{}:
@@ -55,7 +68,7 @@ func BuildPrefixedEnv(env map[string]string, prefix string, values map[string]in
 	}
 }
 
-func BuildEnv(logger *log.Logger, env map[string]string) {
+func BuildEnv(logger *log.Logger, host string, env *MapEnvironment) {
 
 	for {
 		stdin := strings.NewReader("")
@@ -79,10 +92,13 @@ func BuildEnv(logger *log.Logger, env map[string]string) {
 			return
 		}
 
-		for k := range(env) {
-			delete(env, k)
+		env.lock.Lock()
+		for k := range env.internal {
+			delete(env.internal, k)
 		}
-		BuildPrefixedEnv(env, "facter", outmap)
+		env.internal["host"] = host
+		BuildPrefixedEnv(env.internal, "facter", outmap)
+		env.lock.Unlock()
 		time.Sleep(120 * time.Second)
 	}
 }

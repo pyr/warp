@@ -15,21 +15,21 @@ const (
 type PacketStatus string
 
 type Scenario struct {
-	Name string                   `json:"name" binding:"required"`
-	Timeout int                   `json:"timeout,omitempty"`
-	Matcher MatcherDescription    `json:"matcher" binding:"required"`
+	Name     string               `json:"name" binding:"required"`
+	Timeout  int                  `json:"timeout,omitempty"`
+	Matcher  MatcherDescription   `json:"matcher" binding:"required"`
 	Commands []CommandDescription `json:"commands" binding:"required"`
 }
 
 type Packet struct {
-	Opcode PacketOpcode            `json:"opcode" binding:"required"`
-	Sequence string                `json:"sequence" binding:"required"`
-	Message string                 `json:"message,omitempty"`
-	Topology map[string]string     `json:"topology,omitempty"`
-	Scenario *Scenario             `json:"scenario,omitempty"`
-	Step int		       `json:"step"`
-	Host string                    `json:"host,omitempty"`
-	StepOutput *CommandOutput      `json:"output,omitempty"`
+	Opcode     PacketOpcode      `json:"opcode" binding:"required"`
+	Sequence   string            `json:"sequence" binding:"required"`
+	Message    string            `json:"message,omitempty"`
+	Topology   map[string]string `json:"topology,omitempty"`
+	Scenario   *Scenario         `json:"scenario,omitempty"`
+	Step       int               `json:"step"`
+	Host       string            `json:"host,omitempty"`
+	StepOutput *CommandOutput    `json:"output,omitempty"`
 }
 
 func (client *Client) HandleRequest(p *Packet, env Environment) {
@@ -37,7 +37,7 @@ func (client *Client) HandleRequest(p *Packet, env Environment) {
 	if p.Opcode == "ping" {
 		client.Logger.Printf("received ping")
 		client.SendPacket(Packet{
-			Opcode: "pong",
+			Opcode:   "pong",
 			Sequence: p.Sequence,
 		})
 		return
@@ -53,29 +53,29 @@ func (client *Client) HandleRequest(p *Packet, env Environment) {
 	if !matcher.Validate(env) {
 		client.Logger.Printf("received script, denying execution")
 		client.SendPacket(Packet{
-			Opcode: "command-deny",
+			Opcode:   "command-deny",
 			Sequence: p.Sequence,
-			Message: "not a valid target for matcher.",
+			Message:  "not a valid target for matcher.",
 		})
 		return
 	}
 
 	client.Logger.Printf("received script, starting.")
 	client.SendPacket(Packet{
-		Opcode: "command-start",
+		Opcode:   "command-start",
 		Sequence: p.Sequence,
-		Message: "starting execution.",
+		Message:  "starting execution.",
 	})
 
 	// If we got this far, we can run the script.
-	for i, cmddesc := range(p.Scenario.Commands) {
+	for i, cmddesc := range p.Scenario.Commands {
 		cmd := cmddesc.DescriptionToCommand()
 		cmdout := cmd.Execute()
 		client.Logger.Printf("sending step %v output.", i)
 		client.SendPacket(Packet{
-			Opcode: "command-step",
-			Sequence: p.Sequence,
-			Step: i,
+			Opcode:     "command-step",
+			Sequence:   p.Sequence,
+			Step:       i,
 			StepOutput: &cmdout,
 		})
 		if !cmdout.Success {
@@ -84,8 +84,8 @@ func (client *Client) HandleRequest(p *Packet, env Environment) {
 	}
 	client.Logger.Printf("script finished.")
 	client.SendPacket(Packet{
-		Opcode: "command-end",
+		Opcode:   "command-end",
 		Sequence: p.Sequence,
-		Message: "execution finished.",
+		Message:  "execution finished.",
 	})
 }

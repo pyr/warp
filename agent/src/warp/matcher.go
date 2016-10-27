@@ -10,19 +10,19 @@ const (
 	MATCHER_ALL  string = "all"
 	MATCHER_NONE string = "none"
 	MATCHER_NOT  string = "not"
-	MATCHER_OR  string = "or"
-	MATCHER_AND string = "and"
-	MATCHER_HOST  string = "host"
+	MATCHER_OR   string = "or"
+	MATCHER_AND  string = "and"
+	MATCHER_HOST string = "host"
 	MATCHER_FACT string = "fact"
 )
 
 type MatcherDescription struct {
-	Type MatcherType             `json:"type" binding:"required"`
-	Clause *MatcherDescription    `json:"clause,omitempty"`
-	Clauses []*MatcherDescription `json:"clauses,omitempty"`
-	FactKey string               `json:"fact,omitempty"`
-	FactValue string             `json:"value,omitempty"`
-	Host string                  `json:"host,omitempty"`
+	Type      MatcherType           `json:"type" binding:"required"`
+	Clause    *MatcherDescription   `json:"clause,omitempty"`
+	Clauses   []*MatcherDescription `json:"clauses,omitempty"`
+	FactKey   string                `json:"fact,omitempty"`
+	FactValue string                `json:"value,omitempty"`
+	Host      string                `json:"host,omitempty"`
 }
 
 type AllMatcher struct {
@@ -48,7 +48,7 @@ type HostMatcher struct {
 }
 
 type FactMatcher struct {
-	FactKey string
+	FactKey   string
 	FactValue string
 }
 
@@ -84,10 +84,7 @@ func (m NotMatcher) Validate(env Environment) bool {
 }
 
 func (m HostMatcher) Validate(env Environment) bool {
-	if env.Host() == m.Host {
-		return true
-	}
-	return false
+	return (env.Host() == m.Host)
 }
 
 func (m FactMatcher) Validate(env Environment) bool {
@@ -112,13 +109,13 @@ func (md MatcherDescription) DescriptionToMatcher() Clause {
 		return NotMatcher{NotClause: md.Clause.DescriptionToMatcher()}
 	case md.Type == "or":
 		clauses := make([]Clause, 0)
-		for _, desc := range(md.Clauses) {
+		for _, desc := range md.Clauses {
 			clauses = append(clauses, desc.DescriptionToMatcher())
 		}
 		return OrMatcher{Clauses: clauses}
 	case md.Type == "and":
 		clauses := make([]Clause, 0)
-		for _, desc := range(md.Clauses) {
+		for _, desc := range md.Clauses {
 			clauses = append(clauses, desc.DescriptionToMatcher())
 		}
 		return AndMatcher{Clauses: clauses}

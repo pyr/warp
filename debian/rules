@@ -5,7 +5,7 @@ VERSION := $(shell head -n1 project.clj | awk '{print $$3}')
 DEBVERSION := $(subst -SNAPSHOT,~$(shell date +%Y%m%d-%H%M%S),$(VERSION))-0~$(DISTRIBUTION)3
 
 %:
-	dh $@
+	dh $@ --with systemd
 
 override_dh_gencontrol:
 	dh_gencontrol -- -v$(DEBVERSION)
@@ -14,6 +14,9 @@ override_dh_gencontrol:
 override_dh_auto_configure:
 override_dh_auto_test:
 override_dh_auto_install:
+
+# Too long on JAR files
+override_dh_strip_nondeterminism:
 
 override_dh_auto_build: $(info I: DEBVERSION=$(DEBVERSION))
 	lein uberjar

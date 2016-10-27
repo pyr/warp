@@ -1,0 +1,11 @@
+[Unit]
+Description="Warp agent"
+ConditionPathExists=/usr/sbin/warp-agent
+ConditionPathExists=/etc/warp/agent.json
+
+[Service]
+ExecStart=/usr/sbin/warp-agent /etc/warp/agent.json
+LimitNOFILE=8192
+
+[Install]
+WantedBy=multi-user.target
