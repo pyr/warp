@@ -23,6 +23,7 @@ type Client struct {
 	Connected bool
 	Input     chan *Packet
 	Output    chan *Packet
+	lock      sync.Mutex
 }
 
 func NewClient(cfg Config) *Client {
@@ -65,34 +66,39 @@ func NewClient(cfg Config) *Client {
 
 	input := make(chan *Packet, 100)
 	output := make(chan *Packet, 100)
-	envmap := make(map[string]string)
-	env := MapEnvironment{Internal: envmap}
+	env := NewEnvironment(cfg.Host)
 
 	client := &Client{Config: cfg, Conn: nil, Logger: logger, Connected: false, Input: input, Output: output}
-	envmap["host"] = cfg.Host
 
-	go BuildEnv(logger, cfg.Host, envmap)
+	go BuildEnv(logger, cfg.Host, env)
 
 	go func() {
 		for {
+			client.lock.Lock()
 			if client.Connected == false {
+				client.lock.Unlock()
 				conn, err := tls.Dial("tcp", cfg.Server, tlscfg)
 				if err != nil {
 					logger.Printf("unabled to connect, will retry in 5 seconds: %v", err)
 					time.Sleep(5 * time.Second)
 					continue
 				}
+				client.lock.Lock()
 				client.Conn = conn
 				client.Connected = true
 				logger.Printf("connected")
 			}
 			client.Conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
-			p, err := ReadPacket(logger, client.Conn)
+			conn := client.Conn
+			client.lock.Unlock()
+			p, err := ReadPacket(logger, conn)
 			if err != nil {
 				logger.Printf("read error: %v", err)
+				client.lock.Lock()
 				client.Connected = false
 				client.Conn.Close()
 				client.Conn = nil
+				client.lock.Unlock()
 			} else {
 				input <- p
 			}
@@ -110,11 +116,15 @@ func NewClient(cfg Config) *Client {
 		for {
 			p := <-output
 			p.Host = cfg.Host
+			client.lock.Lock()
 			if client.Connected == false {
 				logger.Printf("not connected, dropping output packet")
+				client.lock.Unlock()
 				continue
 			}
-			err = WritePacket(logger, client.Conn, p)
+			conn := client.Conn
+			client.lock.Unlock()
+			err = WritePacket(logger, conn, p)
 			if err != nil {
 				logger.Printf("failed to send packet")
 			}
