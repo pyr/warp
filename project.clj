@@ -15,7 +15,7 @@
                  [cheshire                      "5.5.0"]
                  [clj-time                      "0.11.0"]
                  [org.javassist/javassist       "3.20.0-GA"]
-                 [org.clojure/clojurescript     "1.8.34"]
+                 [org.clojure/clojurescript     "1.9.293"]
                  [reagent                       "0.6.0-alpha"]
                  [cljs-http                     "0.1.39"]]
   :clean-targets ^{:protect false} [:target-path "resources/public/warp"]
