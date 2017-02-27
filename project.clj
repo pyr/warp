@@ -11,7 +11,7 @@
                  [spootnik/signal               "0.2.0"]
                  [spootnik/watchman             "0.3.5"]
                  [spootnik/net                  "0.2.14"]
-                 [bidi                          "1.25.0"]
+                 [bidi                          "2.0.16"]
                  [cheshire                      "5.5.0"]
                  [org.javassist/javassist       "3.20.0-GA"]
 
