@@ -6,6 +6,7 @@ ConditionPathExists=/etc/warp/agent.json
 [Service]
 ExecStart=/usr/sbin/warp-agent /etc/warp/agent.json
 LimitNOFILE=8192
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
