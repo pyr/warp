@@ -1,0 +1,17 @@
+[Unit]
+Description="Warp controller"
+ConditionPathExists=/usr/share/java/warp-controller.jar
+ConditionPathExists=/etc/warp/controller.clj
+
+[Service]
+Type=simple
+User=_warp
+Group=_warp
+EnvironmentFile=-/etc/default/warp-controller
+ExecStart=/usr/bin/java $JAVA_OPTS -cp ${CLASSPATH} warp.main -f /etc/warp/controller.clj
+LimitNOFILE=8192
+Restart=on-failure
+SuccessExitStatus=2
+
+[Install]
+WantedBy=multi-user.target
