@@ -49,7 +49,7 @@
                                  (or port 1337)))))
   (stop [this]
     (when group
-      (.close group))
+      (channel/close! group))
     (when server
       (server))
     (assoc this :group nil :server nil)))

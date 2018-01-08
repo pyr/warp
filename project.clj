@@ -27,6 +27,7 @@
                                         :asset-path    "/warp"
                                         :optimizations :whitespace
                                         :pretty-print  false}}}}
+  :global-vars {*warn-on-reflection* true}
   :profiles {:dev     {:cljsbuild {:builds {:app {:compiler {}}}}}
              :uberjar {:omit-source true
                        :aot         :all
