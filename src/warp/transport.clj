@@ -11,13 +11,10 @@
 (defn warp-adapter
   [mux group]
   (reify
-    pipeline/HandlerAdapter
-    (is-sharable? [this]
-      true)
-    (capabilities [this]
-      #{:channel-active :channel-read})
+    pipeline/ChannelActive
     (channel-active [this ctx]
       (channel/add-to-group group (channel/channel ctx)))
+    pipeline/HandlerAdapter
     (channel-read [this ctx msg]
       (try
         (let [payload (json/parse-string msg true)]
@@ -52,7 +49,7 @@
                                  (or port 1337)))))
   (stop [this]
     (when group
-      (.close group))
+      (channel/close! group))
     (when server
       (server))
     (assoc this :group nil :server nil)))

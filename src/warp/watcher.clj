@@ -1,7 +1,10 @@
 (ns warp.watcher
+  (:import java.io.File)
   (:require [com.stuartsierra.component :as com]
             [clojure.edn                :as edn]
+            [clojure.java.io            :as io]
             [watch.man                  :refer [watch! ->path close]]
+            [warp.parser                :refer [load-unit]]
             [clojure.tools.logging      :refer [info]]))
 
 (defprotocol ScenarioStore
@@ -11,17 +14,14 @@
 (defn extract-id
   [{:keys [type path]}]
   (and (= type :path)
-       (when-let [[_ id] (re-find #"^([^.].*)\.clj$" (str path))]
+       (when-let [[_ id] (re-find #"(?i)^([^.].*)\.(clojure|edn|clj|yaml|yml|warp|wrp)$" (str path))]
          (keyword id))))
-
-(def load-unit
-  (comp edn/read-string slurp str))
 
 (defn load-dir
   [db dir]
   (info "loading dir" dir)
-  (let [dir (java.io.File. dir)]
-    (doseq [file (.listFiles dir)
+  (let [dir (io/file dir)]
+    (doseq [^File file (file-seq dir)
             :when (.isFile file)
             :let [path (.relativize (.toPath dir) (.toPath file))]]
       (when-let [id (extract-id {:type :path :path path})]

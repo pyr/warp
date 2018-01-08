@@ -1,10 +1,11 @@
 (ns warp.api
   (:require [com.stuartsierra.component :as com]
+            [clojure.core.async         :as a]
             [cheshire.core              :as json]
             [warp.engine                :as engine]
             [warp.archive               :as archive]
             [warp.watcher               :as watcher]
-            [net.http.server            :as http]
+            [net.http.server            :refer [run-server]]
             [bidi.bidi                  :refer [match-route*]]
             [bidi.ring                  :refer [resources-maybe redirect]]
             [clojure.tools.logging      :refer [info warn error]]))
@@ -28,19 +29,19 @@
         [""                                       (resources-maybe prefix)]]])
 
 (defn sse-event
-  [content e]
-  (http/stream content (format "data: %s\n\n" (json/generate-string e))))
+  [body e]
+  (a/put! body (format "data: %s\n\n" (json/generate-string e))))
 
 (defn execution-stream-listener
-  [content]
+  [body]
   (reify engine/ExecutionListener
     (publish-state [this {:keys [state] :as state}]
-      (sse-event content {:type :state :state state})
+      (sse-event body {:type :state :state state})
       (when (= state :closed)
-        (http/stream content "\n\n")
-        (http/close! content)))
+        (a/put! body "\n\n")
+        (a/close! body)))
     (publish-event [this event]
-      (sse-event content {:type :event :event event}))))
+      (sse-event body {:type :event :event event}))))
 
 (defn match-route
   [{:keys [request-method uri] :as request}]
@@ -99,18 +100,18 @@
 
 (defmethod dispatch :start-execution
   [request]
-  (let [content   (http/content-stream)
-        listener  (execution-stream-listener content)
+  (let [body      (a/chan 10)
+        listener  (execution-stream-listener body)
         scenario  (get-in request [:route-params :id])
         args      (build-args request)
         execution (engine/new-execution *engine* scenario listener args)]
     (info "will start" scenario)
-    (sse-event content {:type :info :message "starting execution"})
+    (sse-event body {:type :info :message "starting execution"})
     {:status  200
      :headers {:content-type      "text/event-stream"
                :x-accel-buffering "no"
                :cache-control     "no-cache"}
-     :body    content}))
+     :body    body}))
 
 
 (defmethod dispatch :default
@@ -123,10 +124,18 @@
   [{:keys [handler] :as match} request]
   (cond (fn? handler)
         (handler request)
+
         (satisfies? bidi.ring/Ring handler)
         (bidi.ring/request handler request match)
+
         :else
         (dispatch match)))
+
+(defn discard-content
+  [request]
+  (let [body (:body request)]
+    (a/close! body)
+    (assoc request :body "")))
 
 (defn handler-fn
   [{:keys [archive watcher engine]}]
@@ -136,6 +145,7 @@
               *archive* archive]
       (try
         (-> request
+            (discard-content)
             (match-route)
             (wrap-dispatch request))
         (catch Exception e
@@ -150,8 +160,8 @@
 (defrecord Api [port options engine watcher archive server]
   com/Lifecycle
   (start [this]
-    (let [srv (http/run-server (assoc options :port port)
-                               (handler-fn this))]
+    (let [srv (run-server (assoc options :port port)
+                          (handler-fn this))]
       (assoc this :server srv)))
   (stop [this]
     (when server

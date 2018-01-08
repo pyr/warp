@@ -52,24 +52,29 @@
             (process-event archive executions event))
           (recur (a/<! in)))))))
 
-(defrecord Engine [keepalive stop executions transport archive watcher mux]
+(defn run-keepalive
+  [keepalive transport]
+  (when keepalive
+    (future
+      (loop []
+        (Thread/sleep keepalive)
+        (info "ticking")
+        (transport/broadcast transport {:opcode   "ping"
+                                        :sequence (random-uuid)})
+        (recur)))))
+
+(defrecord Engine [keepalive keepalive-thread executions
+                   transport archive watcher mux]
   com/Lifecycle
   (start [this]
-    (let [stop       (a/chan 10)
-          executions (atom {})]
-      (when keepalive
-        (a/go
-          (loop [[_ port] (a/alts! [stop (a/timeout keepalive)])]
-            (when-not (= port stop)
-              (info "ticking")
-              (transport/broadcast transport {:opcode   "ping"
-                                              :sequence (random-uuid)})
-              (recur (a/alts! [stop (a/timeout keepalive)]))))))
+    (let [executions (atom {})]
       (process-events archive executions (:in mux))
-      (assoc this :stop stop :executions executions)))
+      (assoc this
+             :executions executions
+             :keepalive-thread (run-keepalive keepalive transport))))
   (stop [this]
-    (a/close! stop)
-    (assoc this :stop nil :executions nil)))
+    (future-cancel keepalive-thread)
+    (assoc this :executions nil :keepalive-thread nil)))
 
 (defn new-execution
   [engine scenario-id listener args]
