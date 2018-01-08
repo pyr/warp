@@ -2,6 +2,7 @@
   (:require [com.stuartsierra.component :as com]
             [clojure.edn                :as edn]
             [watch.man                  :refer [watch! ->path close]]
+            [warp.parser                :refer [load-unit]]
             [clojure.tools.logging      :refer [info]]))
 
 (defprotocol ScenarioStore
@@ -11,11 +12,8 @@
 (defn extract-id
   [{:keys [type path]}]
   (and (= type :path)
-       (when-let [[_ id] (re-find #"^([^.].*)\.clj$" (str path))]
+       (when-let [[_ id] (re-find #"(?i)^([^.].*)\.(clojure|edn|clj|yaml|yml|warp|wrp)$" (str path))]
          (keyword id))))
-
-(def load-unit
-  (comp edn/read-string slurp str))
 
 (defn load-dir
   [db dir]
