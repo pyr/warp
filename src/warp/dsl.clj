@@ -50,7 +50,12 @@
 
 (defn scenario*
   [script-name directives]
-  (reduce merge {:name (name script-name)} directives))
+  (reduce merge
+          {:timeout  120
+           :matcher  {:type :none}
+           :profiles {}
+           :name     (name script-name)}
+          directives))
 
 (defn profiles
   [& profiles]
