@@ -4,8 +4,18 @@ DISTRIBUTION := $(shell lsb_release -sc)
 VERSION := $(shell head -n1 project.clj | awk '{print $$3}')
 DEBVERSION := $(subst -SNAPSHOT,~$(shell date +%Y%m%d-%H%M%S),$(VERSION))-0~$(DISTRIBUTION)3
 
+ifeq ($(shell dpkg-vendor --derives-from Ubuntu && echo yes),yes)
+	build_controller=yes
+else
+	build_controller=no
+endif
+
 %:
+ifeq ($(build_controller),yes)
 	dh $@ --with systemd
+else
+	dh $@ --with systemd --package=warp-minion
+endif
 
 override_dh_gencontrol:
 	dh_gencontrol -- -v$(DEBVERSION)
@@ -19,8 +29,12 @@ override_dh_auto_install:
 override_dh_strip_nondeterminism:
 
 override_dh_auto_build: $(info I: DEBVERSION=$(DEBVERSION))
+ifeq ($(build_controller),yes)
 	lein uberjar
+endif
 	cd agent && make
 
 override_dh_link:
+ifeq ($(build_controller),yes)
 	dh_link usr/share/java/warp-$(VERSION)-standalone.jar usr/share/java/warp-controller.jar
+endif
