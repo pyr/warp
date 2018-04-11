@@ -31,11 +31,16 @@
     "or"   (paren (join " || " (map pretty-match clauses)))
     ""))
 
+(defn highlight-datum
+  [datum]
+  (assoc datum
+         "stderr" (highlight (get datum "stderr"))
+         "stdout" (highlight (get datum "stdout"))))
+
 (defn ansi-colors
   [[hostname data]]
-  [hostname (map (fn [d] (-> d
-                             (assoc "stderr" (highlight (d "stderr"))
-                                    "stdout" (highlight (d "stdout"))))) data)])
+  [hostname (map highlight-datum data)])
+
 (defn add-scripts
   [scripts [host steps]]
   [host
