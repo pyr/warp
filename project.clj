@@ -16,6 +16,7 @@
                  [exoscale/clj-yaml             "0.5.6"]
                  [bidi                          "2.1.2"]
                  [cheshire                      "5.8.0"]
+                 [clj-time                      "0.11.0"]
                  [org.javassist/javassist       "3.20.0-GA"]
                  [org.clojure/clojurescript     "1.9.946"]
                  [reagent                       "0.8.0-alpha2"]

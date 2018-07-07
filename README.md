@@ -26,7 +26,7 @@ This process is likely the same for several profiles such as
 Warp provides a DSL for writing scenarios and schedules
 executions over a pub-sub system, streaming the results
 to the controller which makes results available through
-an API and web view
+an API and web view.
 
 Command executions can be scheduled through the following means:
 
@@ -60,7 +60,7 @@ Scenario execution happens through an HTTP api.
 
 Warp and [warp-agent](https://github.com/pyr/warp-agent) borrow
 from [mcollective](http://puppetlabs.com/mcollective) and my first
-implementation within [amiral](https://github.com/pyr/amiral)
+implementation within [amiral](https://github.com/pyr/amiral).
 
 Warp aims to improve on amiral in the following ways:
 
@@ -74,6 +74,8 @@ Warp aims to improve on amiral in the following ways:
 
 ## Development
 
+### Controller
+
 To build and run the controller:
 
     lein cljsbuild
@@ -84,6 +86,32 @@ it when a change happens:
 
     lein cljsbuild auto
 
-You can run the agent with:
+### Agent
 
-    ./agent/warp-agent doc/warp-agent.json
+To build and run an agent:
+
+    cd agent
+    make
+    ./warp-agent ../doc/warp-agent.json
+
+### Configuration
+
+#### Certs
+
+You will need 3 certificates/keys:
+
+- a CA
+- a private key signed by the CA
+- the correspondig public key
+
+Since in Java the `pem` format is not supported, you need to produce a `pkcs8`
+format of the private key:
+
+```
+openssl pkcs8 -topk8 -nocrypt -in my_private.key -outform der | base64 > my_private.pkey64.p8
+```
+
+To send a sample command for the ping scenario:
+```
+curl -v 'http://localhost:6381/api/scenarios/ping/run?profile=host&matchars=localhost'
+```

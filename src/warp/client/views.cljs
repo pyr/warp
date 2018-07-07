@@ -120,21 +120,27 @@
     [:span {:class "label label-success"} "success"]
     [:span {:class "label label-danger"}  "failure"]))
 
+(defn sanitize-date
+  [datetime]
+  (str/replace datetime #"T" " "))
+
 (defn scenario-output-summary
-  [{:keys [replay host steps]}]
+  [{:keys [replay host started steps]}]
   (apply tr (concat [(link-to (str "#/replay/" replay "/" host) host)]
+                    [(sanitize-date started)]
                     (for [{:keys [success index]} steps]
                       ^{:key (str "step-" index)}
                       (success-output success))
                     [(success-output (every? :success steps))])))
 
 (defn replay-summary
-  [{:keys [clients accepted refused total scenario id]}]
+  [{:keys [clients accepted refused total scenario id started]}]
   (panel
-   [:span "Run:" (code id)]
+   [:span "Run:" (code id) " @ " started]
    (table-striped
     (vec
      (concat ["Host"]
+             ["Started"]
              (for [[i cmd] (map-indexed vector (:commands scenario))]
                ^{:key (str "cmd-" i)} (scenario-cmd-summary cmd))
              ["Completion"]))
