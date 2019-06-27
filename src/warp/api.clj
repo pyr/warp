@@ -30,7 +30,10 @@
 
 (defn sse-event
   [body e]
-  (a/put! body (format "data: %s\n\n" (json/generate-string e))))
+  (try
+    (a/put! body (format "data: %s\n\n" (json/generate-string e)))
+    (catch Exception e
+      (error e "could not send SSE event, dropping silently"))))
 
 (defn execution-stream-listener
   [body]
