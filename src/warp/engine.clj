@@ -3,12 +3,11 @@
             [clojure.core.async         :as a]
             [warp.archive               :as arc]
             [warp.transport             :as transport]
-            [warp.mux                   :as mux]
             [warp.execution             :as x]
             [warp.watcher               :as watcher]
             [warp.scenario              :as scenario]
             [warp.archive               :as archive]
-            [clojure.tools.logging      :refer [debug info]]))
+            [clojure.tools.logging      :refer [debug info error]]))
 
 (defprotocol ExecutionListener
   (publish-state [this state])
@@ -86,12 +85,18 @@
         execution   (x/make-execution id scenario listener)]
     (swap! executions assoc id execution)
     (a/go
-      (a/>! (get-in engine [:mux :in]) {:opcode :init :sequence id})
-      (a/<! (a/timeout ack-timeout))
-      (a/>! (get-in engine [:mux :in]) {:opcode :ack-timeout :sequence id}))
+      (try
+        (a/>! (get-in engine [:mux :in]) {:opcode :init :sequence id})
+        (a/<! (a/timeout ack-timeout))
+        (a/>! (get-in engine [:mux :in]) {:opcode :ack-timeout :sequence id})
+        (catch Exception e
+          (error e "cannot properly process acks"))))
     (a/go
-      (a/<! (a/timeout timeout))
-      (a/>! (get-in engine [:mux :in]) {:opcode :timeout :sequence id}))
+      (try
+        (a/<! (a/timeout timeout))
+        (a/>! (get-in engine [:mux :in]) {:opcode :timeout :sequence id})
+        (catch Exception e
+          (error e "cannot properly process responses"))))
     (when listener
       (publish-state listener (dissoc execution :listener)))
     (transport/broadcast (:transport engine)

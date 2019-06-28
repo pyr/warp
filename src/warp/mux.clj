@@ -5,7 +5,7 @@
 (defrecord Mux [in]
   com/Lifecycle
   (start [this]
-    (assoc this :in (a/chan 100)))
+    (assoc this :in (a/chan 2000)))
   (stop [this]
     (a/close! in)
     (assoc this :in nil)))
