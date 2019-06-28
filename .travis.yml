@@ -2,8 +2,7 @@ sudo: false
 language: clojure
 lein: lein
 jdk:
-  - openjdk7
-  - oraclejdk7
+  - openjdk8
 branches:
   except:
     - gh-pages
