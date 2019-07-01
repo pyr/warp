@@ -1,13 +1,14 @@
 (ns warp.engine
   (:require [com.stuartsierra.component :as com]
-            [clojure.core.async         :as a]
+            [manifold.stream            :as stream]
+            [manifold.deferred          :as d]
             [warp.archive               :as arc]
             [warp.transport             :as transport]
             [warp.execution             :as x]
             [warp.watcher               :as watcher]
             [warp.scenario              :as scenario]
             [warp.archive               :as archive]
-            [clojure.tools.logging      :refer [debug info error]]))
+            [clojure.tools.logging      :refer [debug info warn error]]))
 
 (defprotocol ExecutionListener
   (publish-state [this state])
@@ -42,14 +43,14 @@
       (swap! executions dissoc sequence))))
 
 (defn process-events
-  [archive executions in]
-  (a/go
-    (loop [payload (a/<! in)]
-      (when-not (nil? payload)
-        (let [event (update payload :opcode (fnil keyword :none))]
-          (when-not (= :pong (:opcode event))
-            (process-event archive executions event))
-          (recur (a/<! in)))))))
+  [archive executions mux]
+  (stream/consume
+   (fn [payload]
+     (when (some? payload)
+       (let [event (update payload :opcode (fnil keyword :none))]
+         (when-not (= :pong (:opcode event))
+           (process-event archive executions event)))))
+   mux))
 
 (defn run-keepalive
   [keepalive transport]
@@ -57,9 +58,10 @@
     (future
       (loop []
         (Thread/sleep keepalive)
-        (info "ticking")
-        (transport/broadcast transport {:opcode   "ping"
-                                        :sequence (random-uuid)})
+        (try
+          (transport/broadcast transport {:opcode "ping" :sequence (random-uuid)})
+          (catch Exception e
+            (error e "broadcast error during ping")))
         (recur)))))
 
 (defrecord Engine [keepalive keepalive-thread executions
@@ -67,7 +69,7 @@
   com/Lifecycle
   (start [this]
     (let [executions (atom {})]
-      (process-events archive executions (:in mux))
+      (process-events archive executions mux)
       (assoc this
              :executions executions
              :keepalive-thread (run-keepalive keepalive transport))))
@@ -83,20 +85,20 @@
         ack-timeout (* 1000 (or (:ack-timeout scenario) 1))
         executions  (:executions engine)
         execution   (x/make-execution id scenario listener)]
+
     (swap! executions assoc id execution)
-    (a/go
-      (try
-        (a/>! (get-in engine [:mux :in]) {:opcode :init :sequence id})
-        (a/<! (a/timeout ack-timeout))
-        (a/>! (get-in engine [:mux :in]) {:opcode :ack-timeout :sequence id})
-        (catch Exception e
-          (error e "cannot properly process acks"))))
-    (a/go
-      (try
-        (a/<! (a/timeout timeout))
-        (a/>! (get-in engine [:mux :in]) {:opcode :timeout :sequence id})
-        (catch Exception e
-          (error e "cannot properly process responses"))))
+
+    (stream/put! (:mux engine) {:opcode :init :sequence id})
+
+    (d/chain (d/future (Thread/sleep ack-timeout))
+             (fn [_]
+               (stream/put! (:mux engine)
+                            {:opcode :ack-timeout :sequence id})))
+
+    (d/chain (d/future (Thread/sleep timeout))
+             (fn [_]
+               (stream/put! (:mux engine)
+                            {:opcode :timeout :sequence id})))
     (when listener
       (publish-state listener (dissoc execution :listener)))
     (transport/broadcast (:transport engine)
