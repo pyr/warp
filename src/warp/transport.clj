@@ -1,62 +1,84 @@
 (ns warp.transport
-  (:require [com.stuartsierra.component :as com]
+  "
+  A TCP server for warp. Funnels all client messages in a single
+  input stream. Clients are subscribed to an event bus which is
+  used to broadcast messages.
+  "
+  (:require [com.stuartsierra.component :as component]
             [cheshire.core              :as json]
-            [warp.mux                   :as mux]
-            [net.tcp                    :as tcp]
-            [net.ssl                    :as ssl]
-            [net.ty.channel             :as channel]
-            [net.ty.pipeline            :as pipeline]
-            [clojure.tools.logging      :refer [info error]]))
+            [manifold.stream            :as stream]
+            [manifold.bus               :as bus]
+            [manifold.deferred          :as d]
+            [aleph.tcp                  :as tcp]
+            [gloss.core                 :as gloss]
+            [gloss.io                   :as io]
+            [warp.ssl                   :as ssl]
+            [warp.pipeline              :as pipeline]
+            [clojure.tools.logging      :refer [info warn error]]))
 
-(defn warp-adapter
-  [mux group]
-  (reify
-    pipeline/ChannelActive
-    (channel-active [this ctx]
-      (channel/add-to-group group (channel/channel ctx)))
-    pipeline/HandlerAdapter
-    (channel-read [this ctx msg]
-      (try
-        (let [payload (json/parse-string msg true)]
-          (mux/input mux payload))
-        (catch Exception e
-          (error e "read failure"))))))
+(defn encode
+  [x]
+  (try
+    (json/generate-string x)
+    (catch Exception e
+      (error e "JSON encode"))))
 
-(defn pipeline
-  [mux group ssl]
-  [(ssl/handler-fn (ssl/server-context ssl))
-   (pipeline/length-field-based-frame-decoder)
-   (pipeline/length-field-prepender)
-   pipeline/string-decoder
-   pipeline/string-encoder
-   (pipeline/read-timeout-handler 60)
-   (pipeline/make-handler-adapter (warp-adapter mux group))])
+(defn decode
+  [x]
+  (try
+    (json/parse-string (String. x "UTF-8") true)
+    (catch Exception e
+      (error e "JSON decode"))))
 
-(defn bootstrap
-  [mux group ssl]
-  {:child-options {:so-keepalive           true
-                   :connect-timeout-millis 1000}
-   :handler       (pipeline/channel-initializer (pipeline mux group ssl))})
+(defn make-handler
+  [bus mux]
+  (let [decoder (comp (map decode) (remove nil?))]
+    (fn [duplex info]
+      (d/future
+        (try
+          (warn "incoming client" (:remote-addr info))
+          (stream/on-closed duplex #(warn "lost client" (:remote-addr info)))
+          (stream/connect (stream/transform decoder 10 duplex)
+                          mux
+                          {:downstream? false})
+          (stream/connect (bus/subscribe bus :out) duplex)
+          (catch Exception e
+            (error e "warp/tcp handler error")))))))
 
-(defrecord Transport [host port ssl server group mux]
-  com/Lifecycle
+(defn make-pipeline
+  [initial-pipeline]
+  (-> initial-pipeline
+      (.addBefore "handler"   "timeout"    (pipeline/read-timeout))
+      (.addBefore "timeout"   "length-in"  (pipeline/length-decoder))
+      (.addBefore "length-in" "length-out" (pipeline/length-encoder))))
+
+(defrecord Transport [host port ssl server group mux clients]
+  component/Lifecycle
   (start [this]
-    (let [group (channel/channel-group "clients")]
-      (assoc this
-             :group  group
-             :server (tcp/server (bootstrap mux group ssl)
-                                 (or host "localhost")
-                                 (or port 1337)))))
+    (let [encoder (comp (map encode) (remove nil?))
+          bus     (bus/event-bus #(stream/stream* {:buffer-size 10
+                                                   :xform       encoder}))
+          options (cond-> {:host               (or host "localhost")
+                           :port               (or port 1337)
+                           :epoll?             true
+                           :pipeline-transform make-pipeline}
+                    (some? ssl)
+                    (assoc :ssl-context (ssl/server-context ssl)))
+          server  (tcp/start-server (make-handler bus mux) options)]
+      (assoc this :bus bus :server server)))
   (stop [this]
-    (when group
-      (channel/close! group))
-    (when server
-      (server))
-    (assoc this :group nil :server nil)))
+    (when (some? server)
+      (.close server))
+    (assoc this :bus nil :server nil)))
 
 (defn broadcast
-  [transport msg]
-  (channel/write-and-flush! (:group transport) (json/generate-string msg)))
+  [{:keys [bus]} msg]
+  (bus/publish! bus :out msg))
+
+(defn make-mux
+  []
+  (stream/stream* {:buffer-size 2048
+                   :permanent?  true}))
 
 (defn make-transport
   [options]

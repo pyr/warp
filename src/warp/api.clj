@@ -1,14 +1,17 @@
 (ns warp.api
-  (:require [com.stuartsierra.component :as com]
-            [clojure.core.async         :as a]
-            [cheshire.core              :as json]
-            [warp.engine                :as engine]
-            [warp.archive               :as archive]
-            [warp.watcher               :as watcher]
-            [net.http.server            :refer [run-server]]
-            [bidi.bidi                  :refer [match-route*]]
-            [bidi.ring                  :refer [resources-maybe redirect]]
-            [clojure.tools.logging      :refer [info warn error]]))
+  (:require [com.stuartsierra.component     :as com]
+            [manifold.stream                :as stream]
+            [manifold.bus                   :as bus]
+            [cheshire.core                  :as json]
+            [warp.engine                    :as engine]
+            [warp.archive                   :as archive]
+            [warp.watcher                   :as watcher]
+            [ring.middleware.keyword-params :refer [wrap-keyword-params]]
+            [ring.middleware.params         :refer [wrap-params]]
+            [aleph.http                     :refer [start-server]]
+            [bidi.bidi                      :refer [match-route*]]
+            [bidi.ring                      :refer [resources-maybe redirect]]
+            [clojure.tools.logging          :refer [info warn error]]))
 
 (def ^:dynamic *engine* nil)
 (def ^:dynamic *archive* nil)
@@ -31,7 +34,7 @@
 (defn sse-event
   [body e]
   (try
-    (a/put! body (format "data: %s\n\n" (json/generate-string e)))
+    (stream/put! body (format "data: %s\n\n" (json/generate-string e)))
     (catch Exception e
       (error e "could not send SSE event, dropping silently"))))
 
@@ -41,16 +44,14 @@
     (publish-state [this {:keys [state] :as state}]
       (sse-event body {:type :state :state state})
       (when (= state :closed)
-        (a/put! body "\n\n")
-        (a/close! body)))
+        (stream/put! body "\n\n")
+        (stream/close! body)))
     (publish-event [this event]
       (sse-event body {:type :event :event event}))))
 
 (defn match-route
-  [{:keys [request-method uri] :as request}]
-  (if (= request-method :error)
-    (assoc request :handler :error)
-    (match-route* api-routes uri request)))
+  [request]
+  (match-route* api-routes (:uri request) request))
 
 (defn any->vec
   [o]
@@ -60,21 +61,21 @@
     :else           (vector o)))
 
 (defn build-args
-  [{:keys [get-params] :as request}]
-  (let [profile   (some-> get-params :profile keyword)
-        matchargs (any->vec (:matchargs get-params))
-        args      (any->vec (:args get-params))]
+  [{:keys [params] :as request}]
+  (let [profile   (some-> params :profile keyword)
+        matchargs (any->vec (:matchargs params))
+        args      (any->vec (:args params))]
     (cond-> {}
-      profile   (assoc :profile   profile)
-      matchargs (assoc :matchargs matchargs)
-      args      (assoc :args      args))))
+      (some? profile)   (assoc :profile   profile)
+      (some? matchargs) (assoc :matchargs matchargs)
+      (some? args)      (assoc :args      args))))
 
 (defmulti dispatch :handler)
 
 (defmethod dispatch :list-scenarios
   [request]
   {:status 200
-     :headers {:content-type "application/json"}
+   :headers {:content-type "application/json"}
    :body   (json/generate-string {:scenarios (watcher/all-scenarios *watcher*)})})
 
 (defmethod dispatch :get-scenario
@@ -103,12 +104,12 @@
 
 (defmethod dispatch :start-execution
   [request]
-  (let [body      (a/chan 10)
+  (let [body      (stream/stream 2048)
         listener  (execution-stream-listener body)
         scenario  (get-in request [:route-params :id])
-        args      (build-args request)
-        execution (engine/new-execution *engine* scenario listener args)]
+        args      (build-args request)]
     (info "will start" scenario)
+    (engine/new-execution *engine* scenario listener args)
     (sse-event body {:type :info :message "starting execution"})
     {:status  200
      :headers {:content-type      "text/event-stream"
@@ -134,12 +135,6 @@
         :else
         (dispatch match)))
 
-(defn discard-content
-  [request]
-  (let [body (:body request)]
-    (a/close! body)
-    (assoc request :body "")))
-
 (defn handler-fn
   [{:keys [archive watcher engine]}]
   (fn [request]
@@ -148,7 +143,6 @@
               *archive* archive]
       (try
         (-> request
-            (discard-content)
             (match-route)
             (wrap-dispatch request))
         (catch Exception e
@@ -163,12 +157,14 @@
 (defrecord Api [port options engine watcher archive server]
   com/Lifecycle
   (start [this]
-    (let [srv (run-server (assoc options :port port)
-                          (handler-fn this))]
+    (let [srv (start-server (-> (handler-fn this)
+                                (wrap-keyword-params)
+                                (wrap-params))
+                            (assoc options :port port))]
       (assoc this :server srv)))
   (stop [this]
     (when server
-      (server))
+      (.close server))
     (assoc this :server nil)))
 
 (defn make-api

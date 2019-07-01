@@ -14,7 +14,7 @@
 (defn extract-id
   [{:keys [type path]}]
   (and (= type :path)
-       (when-let [[_ id] (re-find #"(?i)^([^.].*)\.(clojure|edn|clj|yaml|yml|warp|wrp)$" (str path))]
+       (when-let [[_ id] (re-find #"(?i)^([^.].*)\.(clojure|edn|clj|warp|wrp)$" (str path))]
          (keyword id))))
 
 (defn load-dir

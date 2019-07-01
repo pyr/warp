@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"log"
 	"log/syslog"
+	"net"
 	"os"
 	"sync"
 	"time"
@@ -18,7 +19,7 @@ import (
 
 type Client struct {
 	Config    Config
-	Conn      *tls.Conn
+	Conn       net.Conn
 	Logger    *log.Logger
 	Connected bool
 	Input     chan *Packet
@@ -47,28 +48,31 @@ func NewClient(cfg Config) *Client {
 		os.Exit(1)
 	}
 
-	cert, err := tls.LoadX509KeyPair(cfg.Cert, cfg.PrivKey)
-	if err != nil {
-		logger.Fatalf("cannot load certificate pair: %v", err)
+	var tlscfg *tls.Config
+	tlscfg = nil
+	if (cfg.Cert != "none") {
+		cert, err := tls.LoadX509KeyPair(cfg.Cert, cfg.PrivKey)
+		if err != nil {
+			logger.Fatalf("cannot load certificate pair: %v", err)
+		}
+		data, err := ioutil.ReadFile(cfg.CaCert)
+		if err != nil {
+			logger.Fatalf("cannot load cacertificate: %v", err)
+		}
+		capool := x509.NewCertPool()
+		capool.AppendCertsFromPEM(data)
+		tlscfg = &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			RootCAs:      capool,
+		}
+		tlscfg.BuildNameToCertificate()
 	}
-	data, err := ioutil.ReadFile(cfg.CaCert)
-	if err != nil {
-		logger.Fatalf("cannot load cacertificate: %v", err)
-	}
-	capool := x509.NewCertPool()
-	capool.AppendCertsFromPEM(data)
-
-	tlscfg := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		RootCAs:      capool,
-	}
-	tlscfg.BuildNameToCertificate()
 
 	input := make(chan *Packet, 100)
 	output := make(chan *Packet, 100)
 	env := NewEnvironment(cfg.Host)
 
-	client := &Client{Config: cfg, Conn: nil, Logger: logger, Connected: false, Input: input, Output: output}
+	client := &Client{Config: cfg, Logger: logger, Connected: false, Input: input, Output: output}
 
 	go BuildEnv(logger, cfg.Host, env)
 
@@ -77,9 +81,14 @@ func NewClient(cfg Config) *Client {
 			client.lock.Lock()
 			if client.Connected == false {
 				client.lock.Unlock()
-				conn, err := tls.Dial("tcp", cfg.Server, tlscfg)
+				var conn net.Conn
+				if (tlscfg == nil) {
+					conn, err = net.Dial("tcp", cfg.Server)
+				} else {
+					conn, err = tls.Dial("tcp", cfg.Server, tlscfg)
+				}
 				if err != nil {
-					logger.Printf("unabled to connect, will retry in 5 seconds: %v", err)
+					logger.Printf("unable to connect, will retry in 5 seconds: %v", err)
 					time.Sleep(5 * time.Second)
 					continue
 				}
@@ -88,15 +97,15 @@ func NewClient(cfg Config) *Client {
 				client.Connected = true
 				logger.Printf("connected")
 			}
-			client.Conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
 			conn := client.Conn
+			conn.SetReadDeadline(time.Now().Add(2 * time.Minute))
 			client.lock.Unlock()
 			p, err := ReadPacket(logger, conn)
 			if err != nil {
 				logger.Printf("read error: %v", err)
 				client.lock.Lock()
 				client.Connected = false
-				client.Conn.Close()
+				conn.Close()
 				client.Conn = nil
 				client.lock.Unlock()
 			} else {
@@ -134,7 +143,7 @@ func NewClient(cfg Config) *Client {
 	return client
 }
 
-func ReadPacket(logger *log.Logger, conn *tls.Conn) (*Packet, error) {
+func ReadPacket(logger *log.Logger, conn net.Conn) (*Packet, error) {
 
 	inbuf := make([]byte, 1024)
 	br, err := conn.Read(inbuf)
@@ -188,7 +197,7 @@ func ReadPacket(logger *log.Logger, conn *tls.Conn) (*Packet, error) {
 	return &p, nil
 }
 
-func WritePacket(logger *log.Logger, conn *tls.Conn, p *Packet) error {
+func WritePacket(logger *log.Logger, conn net.Conn, p *Packet) error {
 
 	jsbuf, err := json.Marshal(&p)
 	if err != nil {

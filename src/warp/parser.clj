@@ -2,14 +2,13 @@
   (:require [clojure.string :as str]
             [clojure.spec.alpha :as s]
             [clojure.edn :as edn]
-            [warp.dsl :as dsl]
-            [clj-yaml.core :as yaml]))
+            [warp.dsl :as dsl]))
 
 (defn get-extension
   [path]
   (when-let [[_ extension] (re-matches #"^.*\.([a-zA-Z]+)*$" path)]
     (let [kw        (keyword (str/lower-case extension))
-          shortcuts {:clojure :edn :clj :edn :wrp :warp :yml :yaml}]
+          shortcuts {:clojure :edn :clj :edn :wrp :warp}]
       (shortcuts kw kw))))
 
 (defn load-error
@@ -18,7 +17,6 @@
 
 (defmulti load-config  get-extension)
 (defmethod load-config :edn     [in] (edn/read-string (slurp in)))
-(defmethod load-config :yaml    [in] (yaml/parse-string (slurp in)))
 (defmethod load-config :warp    [in] (dsl/load-scenario in))
 (defmethod load-config :default [in] (load-error in))
 
