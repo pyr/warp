@@ -48,7 +48,7 @@
 (defn make-pipeline
   [initial-pipeline]
   (-> initial-pipeline
-      (.addBefore "handler"   "timeout"    (pipeline/read-timeout))
+      (.addBefore "handler"   "timeout"    (pipeline/read-timeout 30))
       (.addBefore "timeout"   "length-in"  (pipeline/length-decoder))
       (.addBefore "length-in" "length-out" (pipeline/length-encoder))))
 
