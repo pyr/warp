@@ -3,6 +3,7 @@
 
 (defprotocol Archive
   (record [this scenario id event])
+  (all-replays [this])
   (replays [this scenario])
   (replay [this id]))
 
@@ -24,7 +25,9 @@
   (replays [this scenario]
     (vec (get-in @db [:by-scenario (keyword scenario)])))
   (replay [this id]
-    (get-in @db [:replays id])))
+    (get-in @db [:replays id]))
+  (all-replays [this]
+    (vals (:replays @db))))
 
 (defn make-archive
   []
