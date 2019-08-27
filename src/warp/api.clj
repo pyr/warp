@@ -28,7 +28,8 @@
                                 [["/" :id "/run"] {:get  :start-execution}]]]
                  ["executions" [[""               {:get  :list-executions}]
                                 [["/" :id]        {:get  :get-execution}]]]
-                 ["replays"    [[["/" :id]        {:get  :get-replay}]]]]]
+                 ["replays"    [[""               {:get  :all-replays}]
+                                [["/" :id]        {:get  :get-replay}]]]]]
         [""                                       (resources-maybe prefix)]]])
 
 (defn sse-event
@@ -95,6 +96,14 @@
     {:status 200
      :headers {:content-type "application/json"}
      :body   (json/generate-string {:execution replay})}))
+
+(defmethod dispatch :all-replays
+  [{:keys [route-params]}]
+  (let [replays (archive/all-replays *archive*)]
+    (info "fetching replays")
+    {:status 200
+     :headers {:content-type "application/json"}
+     :body   (json/generate-string {:replays replays})}))
 
 (defmethod dispatch :list-executions
   [request]

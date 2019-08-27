@@ -16,7 +16,7 @@
 
 (defn random-uuid
   []
-  (str (java.util.UUID/randomUUID)))
+  (str (com.datastax.driver.core.utils.UUIDs/timeBased)))
 
 (def progress-command?
   #{:init :command-start :command-deny :command-step :command-end

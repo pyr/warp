@@ -24,6 +24,7 @@
                  [io.netty/netty-tcnative                  "2.0.25.Final"]
                  [org.javassist/javassist                  "3.25.0-GA"]
                  [io.netty/netty-tcnative-boringssl-static "2.0.25.Final"]
+                 [cc.qbits/alia                            "4.3.1"]
 ]
   :clean-targets ^{:protect false} [:target-path "resources/public/warp"]
   :cljsbuild {:builds {:app {:source-paths ["src/warp/client"]
