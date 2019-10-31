@@ -7,7 +7,7 @@
                  [org.clojure/tools.cli                    "0.3.5"]
                  [org.clojure/core.async                   "0.4.500"]
                  [com.stuartsierra/component               "0.4.0"]
-                 [spootnik/unilog                          "0.7.24"]
+                 [spootnik/unilog                          "0.7.25"]
                  [spootnik/uncaught                        "0.5.5"]
                  [spootnik/signal                          "0.2.2"]
                  [spootnik/watchman                        "0.3.7"]
@@ -25,7 +25,9 @@
                  [org.javassist/javassist                  "3.25.0-GA"]
                  [io.netty/netty-tcnative-boringssl-static "2.0.25.Final"]
                  [cc.qbits/alia                            "4.3.1"]
-]
+                 ]
+  :pedantic? :warn
+  :deploy-repositories [["releases" :clojars] ["snapshots" :clojars]]
   :clean-targets ^{:protect false} [:target-path "resources/public/warp"]
   :cljsbuild {:builds {:app {:source-paths ["src/warp/client"]
                              :compiler {:output-to     "resources/public/warp/app.js"
