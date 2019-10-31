@@ -1,4 +1,4 @@
-(defproject warp "0.7.1"
+(defproject warp "0.7.2-SNAPSHOT"
   :main warp.main
   :plugins [[lein-cljsbuild "1.1.7"]
             [lein-ancient   "0.6.15"]]
