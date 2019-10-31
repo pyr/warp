@@ -1,5 +1,6 @@
 (ns warp.engine
   (:require [com.stuartsierra.component :as com]
+            [clojure.string             :as str]
             [manifold.stream            :as stream]
             [manifold.deferred          :as d]
             [warp.archive               :as arc]
@@ -8,6 +9,7 @@
             [warp.watcher               :as watcher]
             [warp.scenario              :as scenario]
             [warp.archive               :as archive]
+            [unilog.context             :refer [with-context]]
             [clojure.tools.logging      :refer [debug info warn error]]))
 
 (defprotocol ExecutionListener
@@ -77,6 +79,16 @@
     (future-cancel keepalive-thread)
     (assoc this :executions nil :keepalive-thread nil)))
 
+(defn build-context
+  [scenario id args]
+  (let [{:keys [profile matchargs args]} args]
+    (cond-> {:scenario (str scenario)
+             :id (str id)}
+      (some? profile)   (update :profile str)
+      (some? matchargs) (assoc :to-args (str/join "," (map str matchargs)))
+      (some? args)      (assoc :with-args (str/join "," (map str args))))))
+
+
 (defn new-execution
   [engine scenario-id listener args]
   (let [id          (random-uuid)
@@ -86,7 +98,11 @@
         executions  (:executions engine)
         execution   (x/make-execution id scenario listener)]
 
+    (with-context (build-context scenario-id id args)
+      (info "launching execution"))
+
     (swap! executions assoc id execution)
+
 
     (stream/put! (:mux engine) {:opcode :init :sequence id})
 

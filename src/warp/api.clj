@@ -11,6 +11,7 @@
             [aleph.http                     :refer [start-server]]
             [bidi.bidi                      :refer [match-route*]]
             [bidi.ring                      :refer [resources-maybe redirect]]
+            [unilog.context                 :refer [with-context]]
             [clojure.tools.logging          :refer [info warn error]]))
 
 (def ^:dynamic *engine* nil)
@@ -39,12 +40,33 @@
     (catch Exception e
       (error e "could not send SSE event, dropping silently"))))
 
+(defn client-success?
+  [{:keys [max index]}]
+  (= index max))
+
+(defn log-state
+  [{:keys [id scenario accepted refused total clients]}]
+  (let [base-context
+        {:id       (str id)
+         :scenario (str scenario)
+         :accepted (str accepted)
+         :refused  (str refused)
+         :total    (str total)}]
+    (doseq [client clients
+            :let   [host (:host client)
+                    success? (client-success? client)]]
+      (with-context (assoc base-context
+                           :host host
+                           :success (if success? "true" "false"))
+        (info "output for" host "is" (if success? "success" "failure"))))))
+
 (defn execution-stream-listener
   [body]
   (reify engine/ExecutionListener
     (publish-state [this {:keys [state] :as state}]
       (sse-event body {:type :state :state state})
       (when (= state :closed)
+        (log-state state)
         (stream/put! body "\n\n")
         (stream/close! body)))
     (publish-event [this event]
@@ -117,7 +139,7 @@
         listener  (execution-stream-listener body)
         scenario  (get-in request [:route-params :id])
         args      (build-args request)]
-    (info "will start" scenario)
+
     (engine/new-execution *engine* scenario listener args)
     (sse-event body {:type :info :message "starting execution"})
     {:status  200
