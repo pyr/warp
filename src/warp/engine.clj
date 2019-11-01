@@ -80,13 +80,12 @@
     (assoc this :executions nil :keepalive-thread nil)))
 
 (defn build-context
-  [scenario id args]
-  (let [{:keys [profile matchargs args]} args]
-    (cond-> {:scenario (str scenario)
-             :id (str id)}
-      (some? profile)   (update :profile str)
-      (some? matchargs) (assoc :to-args (str/join "," (map str matchargs)))
-      (some? args)      (assoc :with-args (str/join "," (map str args))))))
+  [scenario id {:keys [profile matchargs args]}]
+  (cond-> {:scenario (str scenario)
+           :id       (str id)}
+    (some? profile)   (assoc :profile (str profile))
+    (some? matchargs) (assoc :to-args (str/join "," (map str matchargs)))
+    (some? args)      (assoc :with-args (str/join "," (map str args)))))
 
 
 (defn new-execution
