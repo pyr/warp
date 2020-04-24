@@ -22,11 +22,13 @@
 
 (def progress-command?
   #{:init :command-start :command-deny :command-step :command-end
+    :command-denied
     :ack-timeout :timeout})
 
 (defn process-event
   [archive executions {:keys [opcode sequence] :as event}]
 
+  (info "received event:" (pr-str event))
   (when-not (progress-command? opcode)
     (throw (ex-info "invalid event received" {:event event})))
 
