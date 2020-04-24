@@ -1,5 +1,5 @@
 (ns warp.execution
-  (:require [clojure.tools.logging :refer [debug info]]))
+  (:require [clojure.tools.logging :as log]))
 
 
 (defrecord Event     [host opcode sequence step output])
@@ -35,13 +35,14 @@
 
 (defn sanitize-state
   [execution]
-  (let [can-close? (:can-close? execution)
-        clients    (:clients execution)
-        closed?    (comp (partial = :closed) :state)
-        open?      (complement closed?)]
-    (if (and can-close? (open? execution) (every? closed? (vals clients)))
-      (assoc execution :state :closed)
-      execution)))
+  (when (some? execution)
+    (let [can-close? (:can-close? execution)
+          clients    (:clients execution)
+          closed?    (comp (partial = :closed) :state)
+          open?      (complement closed?)]
+      (if (and can-close? (open? execution) (every? closed? (vals clients)))
+        (assoc execution :state :closed)
+        execution))))
 
 (defmulti augment (fn [something event] (class something)))
 
@@ -61,48 +62,56 @@
 
 (defmethod augment Execution
   [{:keys [id scenario state] :as execution} {:keys [host opcode sequence step] :as event}]
-  (->
+  (log/debug "transition:"  state "=>" opcode)
+  (sanitize-state
    (let [max (count (:commands scenario))]
-     (debug "transition:"  state "=>" opcode)
-     (when-not (= id sequence)
-       (throw (ex-info "augment: invalid event sequence" {})))
-     (when (= state :closed)
-       (throw (ex-info "augment: input while execution closed" {})))
-     (case opcode
-       :init
+     (cond
+       (not (= id sequence))
+       (do
+         (log/error "augment: invalid event sequence")
+         execution)
+
+       (= state :close)
+       ;; This will return nil
+       (log/error "augment: input while execution closed" {})
+
+       (= opcode :init)
        execution
-       :ack-timeout
+
+       (= opcode :ack-timeout)
        (assoc execution :can-close? true)
-       :timeout
+
+       (= opcode :timeout)
        (-> execution
            (update :clients (fn [cs] (zipmap (keys cs) (mapv close (vals cs)))))
            (assoc :state :closed))
-       :command-start
+
+       (= opcode :command-start)
        (-> execution
            (update :accepted inc)
            (update :total inc)
            (assoc-in [:clients host] (make-client host max)))
-       :command-deny
+
+       (contains? #{:command-deny :command-denied} opcode)
        (-> execution
            (update :refused inc)
            (update :total inc))
-       :command-denied
-       (-> execution
-           (update :refused inc)
-           (update :total inc))
-       :command-end
+
+       (= opcode :command-end)
        (update-in execution [:clients host] close)
+
        :command-step
        (if (get-in execution [:clients host])
          (update-in execution [:clients host] augment event)
-         (throw (ex-info "augment: invalid client in event" {})))
-       ;; default case
-       (throw (ex-info "augment: unknown state" {}))))
-   (sanitize-state)))
+         (do (log/error "augment: invalid client in event")
+             execution))
+
+       :else
+       (log/error "augment: invalid event or state")))))
 
 (defmethod augment nil
   [_ event]
-  (info "augment: stray event: " (pr-str event))
+  (log/info "augment: stray event: " (pr-str event))
   nil)
 
 (comment

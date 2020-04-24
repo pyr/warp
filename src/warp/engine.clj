@@ -49,10 +49,13 @@
   [archive executions mux]
   (stream/consume
    (fn [payload]
-     (when (some? payload)
-       (let [event (update payload :opcode (fnil keyword :none))]
-         (when-not (= :pong (:opcode event))
-           (process-event archive executions event)))))
+     (try
+       (when (some? payload)
+         (let [event (update payload :opcode (fnil keyword :none))]
+           (when-not (= :pong (:opcode event))
+             (process-event archive executions event))))
+       (catch Exception e
+         (error e "serious error during processing" (pr-str payload)))))
    mux))
 
 (defn run-keepalive
