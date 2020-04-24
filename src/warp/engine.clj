@@ -28,7 +28,6 @@
 (defn process-event
   [archive executions {:keys [opcode sequence] :as event}]
 
-  (info "received event:" (pr-str event))
   (when-not (progress-command? opcode)
     (throw (ex-info "invalid event received" {:event event})))
 

@@ -86,6 +86,10 @@
        (-> execution
            (update :refused inc)
            (update :total inc))
+       :command-denied
+       (-> execution
+           (update :refused inc)
+           (update :total inc))
        :command-end
        (update-in execution [:clients host] close)
        :command-step
